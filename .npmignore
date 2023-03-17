@@ -1,0 +1,8 @@
+build.bat*
+*.tgz*
+*.DotSettings.user*
+upm-ci~/**
+.Editor/**
+.yamato/**
+*.zip*
+TestRunnerOptions.json
