@@ -52,8 +52,11 @@ namespace VSCodeEditor
 
         private static string SkipPathPrefix(string path, string prefix)
         {
-            return path.StartsWith($@"{prefix}{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                ? path.Substring(prefix.Length + 1)
+            return path.StartsWith(
+                $@"{prefix}{Path.DirectorySeparatorChar}",
+                StringComparison.Ordinal
+            )
+                ? path[(prefix.Length + 1)..]
                 : path;
         }
     }

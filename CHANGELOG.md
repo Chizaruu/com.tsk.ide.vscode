@@ -1,6 +1,14 @@
 # Code Editor Package for Visual Studio Code
 
-## [1.2.6] - 2023-05-10
+## [1.2.7] - 2023-03-19
+
+- Added Unity Roslyn analyzers support (See <https://code.visualstudio.com/docs/other/unity#_enabling-unity-warnings>)
+- Added Formatting support (See CreateOmniSharpConfig() in VSCodeScriptEditor.cs)
+- Removed Rider Package (Spits)
+- Updated Text-Framework to 1.3.3
+- Start of Community Support
+
+## [1.2.6] - 2023-03-10
 
 - Added workspace file generation
 - End of Unity Support

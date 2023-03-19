@@ -16,22 +16,32 @@ namespace VSCodeEditor
         IEnumerable<string> GetAllAssetPaths();
         IEnumerable<string> GetRoslynAnalyzerPaths();
         UnityEditor.PackageManager.PackageInfo FindForAssetPath(string assetPath);
-        ResponseFileData ParseResponseFile(string responseFilePath, string projectDirectory, string[] systemReferenceDirectories);
+        ResponseFileData ParseResponseFile(
+            string responseFilePath,
+            string projectDirectory,
+            string[] systemReferenceDirectories
+        );
         bool IsInternalizedPackagePath(string path);
         void ToggleProjectGeneration(ProjectGenerationFlag preference);
     }
 
-    internal interface IPackageInfoCache{
+    internal interface IPackageInfoCache
+    {
         void ResetPackageInfoCache();
     }
 
     internal class AssemblyNameProvider : IAssemblyNameProvider, IPackageInfoCache
     {
-        private readonly Dictionary<string, UnityEditor.PackageManager.PackageInfo> m_PackageInfoCache = new Dictionary<string, UnityEditor.PackageManager.PackageInfo>();
+        private readonly Dictionary<
+            string,
+            UnityEditor.PackageManager.PackageInfo
+        > m_PackageInfoCache = new();
 
-        ProjectGenerationFlag m_ProjectGenerationFlag = (ProjectGenerationFlag)EditorPrefs.GetInt("unity_project_generation_flag", 0);
+        ProjectGenerationFlag m_ProjectGenerationFlag = (ProjectGenerationFlag)
+            EditorPrefs.GetInt("unity_project_generation_flag", 0);
 
-        public string[] ProjectSupportedExtensions => EditorSettings.projectGenerationUserExtensions;
+        public string[] ProjectSupportedExtensions =>
+            EditorSettings.projectGenerationUserExtensions;
 
         public ProjectGenerationFlag ProjectGenerationFlag
         {
@@ -50,8 +60,11 @@ namespace VSCodeEditor
 
         public IEnumerable<Assembly> GetAssemblies(Func<string, bool> shouldFileBePartOfSolution)
         {
-            return CompilationPipeline.GetAssemblies()
-                .Where(i => 0 < i.sourceFiles.Length && i.sourceFiles.Any(shouldFileBePartOfSolution));
+            return CompilationPipeline
+                .GetAssemblies()
+                .Where(
+                    i => 0 < i.sourceFiles.Length && i.sourceFiles.Any(shouldFileBePartOfSolution)
+                );
         }
 
         public IEnumerable<string> GetAllAssetPaths()
@@ -60,7 +73,7 @@ namespace VSCodeEditor
         }
 
         private static string ResolvePotentialParentPackageAssetPath(string assetPath)
-		{
+        {
             const string packagesPrefix = "packages/";
             if (!assetPath.StartsWith(packagesPrefix, StringComparison.OrdinalIgnoreCase))
             {
@@ -73,33 +86,39 @@ namespace VSCodeEditor
                 return assetPath.ToLowerInvariant();
             }
 
-            return assetPath.Substring(0, followupSeparator).ToLowerInvariant();
-		}
+            return assetPath[..followupSeparator].ToLowerInvariant();
+        }
 
         public void ResetPackageInfoCache()
-		{
-			m_PackageInfoCache.Clear();
-		}
+        {
+            m_PackageInfoCache.Clear();
+        }
 
         public UnityEditor.PackageManager.PackageInfo FindForAssetPath(string assetPath)
         {
             var parentPackageAssetPath = ResolvePotentialParentPackageAssetPath(assetPath);
-			if (parentPackageAssetPath == null)
-			{
-				return null;
-			}
+            if (parentPackageAssetPath == null)
+            {
+                return null;
+            }
 
-			if (m_PackageInfoCache.TryGetValue(parentPackageAssetPath, out var cachedPackageInfo))
-			{
-				return cachedPackageInfo;
-			}
+            if (m_PackageInfoCache.TryGetValue(parentPackageAssetPath, out var cachedPackageInfo))
+            {
+                return cachedPackageInfo;
+            }
 
-			var result = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(parentPackageAssetPath);
-			m_PackageInfoCache[parentPackageAssetPath] = result;
-			return result;
+            var result = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(
+                parentPackageAssetPath
+            );
+            m_PackageInfoCache[parentPackageAssetPath] = result;
+            return result;
         }
 
-        public ResponseFileData ParseResponseFile(string responseFilePath, string projectDirectory, string[] systemReferenceDirectories)
+        public ResponseFileData ParseResponseFile(
+            string responseFilePath,
+            string projectDirectory,
+            string[] systemReferenceDirectories
+        )
         {
             return CompilationPipeline.ParseResponseFile(
                 responseFilePath,
@@ -137,7 +156,10 @@ namespace VSCodeEditor
 #if UNITY_2019_3_OR_NEWER
                 case PackageSource.LocalTarball:
                     return !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.LocalTarBall);
+
 #endif
+                default:
+                    break;
             }
 
             return false;
@@ -157,8 +179,14 @@ namespace VSCodeEditor
 
         public IEnumerable<string> GetRoslynAnalyzerPaths()
         {
-            return PluginImporter.GetAllImporters()
-                .Where(i => !i.isNativePlugin && AssetDatabase.GetLabels(i).SingleOrDefault(l => l == "RoslynAnalyzer") != null)
+            return PluginImporter
+                .GetAllImporters()
+                .Where(
+                    i =>
+                        !i.isNativePlugin
+                        && AssetDatabase.GetLabels(i).SingleOrDefault(l => l == "RoslynAnalyzer")
+                            != null
+                )
                 .Select(i => i.assetPath);
         }
     }

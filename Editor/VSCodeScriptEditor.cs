@@ -13,23 +13,36 @@ namespace VSCodeEditor
     {
         const string vscode_argument = "vscode_arguments";
         const string vscode_extension = "vscode_userExtensions";
-        static readonly GUIContent k_ResetArguments = EditorGUIUtility.TrTextContent("Reset argument");
+        static readonly GUIContent k_ResetArguments = EditorGUIUtility.TrTextContent(
+            "Reset argument"
+        );
         string m_Arguments;
+        readonly IDiscovery m_Discoverability;
+        readonly IGenerator m_ProjectGeneration;
 
-        IDiscovery m_Discoverability;
-        IGenerator m_ProjectGeneration;
-
-        static readonly string[] k_SupportedFileNames = { "code.exe", "visualstudiocode.app", "visualstudiocode-insiders.app", "vscode.app", "code.app", "code.cmd", "code-insiders.cmd", "code", "com.visualstudio.code" };
+        static readonly string[] k_SupportedFileNames =
+        {
+            "code.exe",
+            "visualstudiocode.app",
+            "visualstudiocode-insiders.app",
+            "vscode.app",
+            "code.app",
+            "code.cmd",
+            "code-insiders.cmd",
+            "code",
+            "com.visualstudio.code"
+        };
 
         static bool IsOSX => Application.platform == RuntimePlatform.OSXEditor;
 
         static string DefaultApp => EditorPrefs.GetString("kScriptsDefaultApp");
 
-        static string DefaultArgument { get; } = "\"$(ProjectPath)/$(ProjectName).code-workspace\" -g \"$(File)\":$(Line):$(Column)";
+        static string DefaultArgument { get; } =
+            "\"$(ProjectPath)/$(ProjectName).code-workspace\" -g \"$(File)\":$(Line):$(Column)";
 
         string Arguments
         {
-            get => m_Arguments ?? (m_Arguments = EditorPrefs.GetString(vscode_argument, DefaultArgument));
+            get => m_Arguments ??= EditorPrefs.GetString(vscode_argument, DefaultArgument);
             set
             {
                 m_Arguments = value;
@@ -37,7 +50,7 @@ namespace VSCodeEditor
             }
         }
 
-        static string[] defaultExtensions
+        static string[] DefaultExtensions
         {
             get
             {
@@ -45,7 +58,8 @@ namespace VSCodeEditor
                 return EditorSettings.projectGenerationBuiltinExtensions
                     .Concat(EditorSettings.projectGenerationUserExtensions)
                     .Concat(customExtensions)
-                    .Distinct().ToArray();
+                    .Distinct()
+                    .ToArray();
             }
         }
 
@@ -62,11 +76,14 @@ namespace VSCodeEditor
 
         static string HandledExtensionsString
         {
-            get => EditorPrefs.GetString(vscode_extension, string.Join(";", defaultExtensions));
+            get => EditorPrefs.GetString(vscode_extension, string.Join(";", DefaultExtensions));
             set => EditorPrefs.SetString(vscode_extension, value);
         }
 
-        public bool TryGetInstallationForPath(string editorPath, out CodeEditor.Installation installation)
+        public bool TryGetInstallationForPath(
+            string editorPath,
+            out CodeEditor.Installation installation
+        )
         {
             var lowerCasePath = editorPath.ToLower();
             var filename = Path.GetFileName(lowerCasePath).Replace(" ", "");
@@ -126,12 +143,17 @@ namespace VSCodeEditor
             RegenerateProjectFiles();
             EditorGUI.indentLevel--;
 
-            HandledExtensionsString = EditorGUILayout.TextField(new GUIContent("Extensions handled: "), HandledExtensionsString);
+            HandledExtensionsString = EditorGUILayout.TextField(
+                new GUIContent("Extensions handled: "),
+                HandledExtensionsString
+            );
         }
 
         void RegenerateProjectFiles()
         {
-            var rect = EditorGUI.IndentedRect(EditorGUILayout.GetControlRect(new GUILayoutOption[] { }));
+            var rect = EditorGUI.IndentedRect(
+                EditorGUILayout.GetControlRect(new GUILayoutOption[] { })
+            );
             rect.width = 252;
             if (GUI.Button(rect, "Regenerate project files"))
             {
@@ -141,7 +163,9 @@ namespace VSCodeEditor
 
         void SettingsButton(ProjectGenerationFlag preference, string guiMessage, string toolTip)
         {
-            var prevValue = m_ProjectGeneration.AssemblyNameProvider.ProjectGenerationFlag.HasFlag(preference);
+            var prevValue = m_ProjectGeneration.AssemblyNameProvider.ProjectGenerationFlag.HasFlag(
+                preference
+            );
             var newValue = EditorGUILayout.Toggle(new GUIContent(guiMessage, toolTip), prevValue);
             if (newValue != prevValue)
             {
@@ -155,17 +179,50 @@ namespace VSCodeEditor
             {
                 m_ProjectGeneration.Sync();
             }
+
+            if (!HasNuGetFolder())
+            {
+                CreateNuGetFolder();
+            }
+
+            if (!HasRoslynDLL())
+            {
+                CreateRoslynDLL();
+            }
+
+            if (!HasOmniSharpConfig())
+            {
+                CreateOmniSharpConfig();
+            }
+
+            if (!HasEditorConfig())
+            {
+                CreateEditorConfig();
+            }
         }
 
-        public void SyncIfNeeded(string[] addedFiles, string[] deletedFiles, string[] movedFiles, string[] movedFromFiles, string[] importedFiles)
+        public void SyncIfNeeded(
+            string[] addedFiles,
+            string[] deletedFiles,
+            string[] movedFiles,
+            string[] movedFromFiles,
+            string[] importedFiles
+        )
         {
-            (m_ProjectGeneration.AssemblyNameProvider as IPackageInfoCache)?.ResetPackageInfoCache();
-            m_ProjectGeneration.SyncIfNeeded(addedFiles.Union(deletedFiles).Union(movedFiles).Union(movedFromFiles).ToList(), importedFiles);
+            (
+                m_ProjectGeneration.AssemblyNameProvider as IPackageInfoCache
+            )?.ResetPackageInfoCache();
+            m_ProjectGeneration.SyncIfNeeded(
+                addedFiles.Union(deletedFiles).Union(movedFiles).Union(movedFromFiles).ToList(),
+                importedFiles
+            );
         }
 
         public void SyncAll()
         {
-            (m_ProjectGeneration.AssemblyNameProvider as IPackageInfoCache)?.ResetPackageInfoCache();
+            (
+                m_ProjectGeneration.AssemblyNameProvider as IPackageInfoCache
+            )?.ResetPackageInfoCache();
             AssetDatabase.Refresh();
             m_ProjectGeneration.Sync();
         }
@@ -182,14 +239,16 @@ namespace VSCodeEditor
             if (column == -1)
                 column = 0;
 
-            var workspacePath = $"{m_ProjectGeneration.ProjectDirectory}/{Path.GetFileName(m_ProjectGeneration.ProjectDirectory)}.code-workspace";
+            var workspacePath =
+                $"{m_ProjectGeneration.ProjectDirectory}/{Path.GetFileName(m_ProjectGeneration.ProjectDirectory)}.code-workspace";
 
             string arguments;
             if (Arguments != DefaultArgument)
             {
-                arguments = m_ProjectGeneration.ProjectDirectory != path
-                    ? CodeEditor.ParseArgument(Arguments, path, line, column)
-                    : workspacePath;
+                arguments =
+                    m_ProjectGeneration.ProjectDirectory != path
+                        ? CodeEditor.ParseArgument(Arguments, path, line, column)
+                        : workspacePath;
             }
             else
             {
@@ -212,7 +271,9 @@ namespace VSCodeEditor
                 {
                     FileName = app,
                     Arguments = arguments,
-                    WindowStyle = app.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal,
+                    WindowStyle = app.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase)
+                        ? ProcessWindowStyle.Hidden
+                        : ProcessWindowStyle.Normal,
                     CreateNoWindow = true,
                     UseShellExecute = true,
                 }
@@ -238,6 +299,121 @@ namespace VSCodeEditor
             return true;
         }
 
+        private void CreateNuGetFolder()
+        {
+            var nugetFolder = Path.Combine(m_ProjectGeneration.ProjectDirectory, "NuGet");
+            
+            Directory.CreateDirectory(nugetFolder);
+        }
+
+        private bool HasNuGetFolder()
+        {
+            var nugetFolder = Path.Combine(m_ProjectGeneration.ProjectDirectory, "NuGet");
+            return Directory.Exists(nugetFolder);
+        }
+
+        private void CreateRoslynDLL()
+        {
+            string unityRoslynDLL = Path.Combine(
+                m_ProjectGeneration.ProjectDirectory,
+                "Packages",
+                "com.tsk.ide.vscode",
+                "Editor",
+                "NuGet",
+                "Microsoft.Unity.Analyzers.dll.koala"
+            );
+
+            string nugetFolder = Path.Combine(m_ProjectGeneration.ProjectDirectory, "NuGet");
+            string nugetRoslynDLL = Path.Combine(nugetFolder, "Microsoft.Unity.Analyzers.dll");
+
+            File.Copy(unityRoslynDLL, nugetRoslynDLL);
+        }
+
+        private bool HasRoslynDLL()
+        {
+            string nugetFolder = Path.Combine(m_ProjectGeneration.ProjectDirectory, "NuGet");
+            string nugetRoslynDLL = Path.Combine(nugetFolder, "Microsoft.Unity.Analyzers.dll");
+
+            return File.Exists(nugetRoslynDLL);
+        }
+
+        private void CreateOmniSharpConfig()
+        {
+            string configFilePath = Path.Combine(
+                m_ProjectGeneration.ProjectDirectory,
+                "omnisharp.json"
+            );
+
+                File.WriteAllText(
+                    configFilePath,
+                    @"{
+    ""RoslynExtensionsOptions"": {
+        ""EnableAnalyzersSupport"": true,
+        ""LocationPaths"": [""./NuGet""]
+    },
+    ""FormattingOptions"": {
+        ""newLine"": ""\n"",
+        ""useTabs"": false,
+        ""tabSize"": 2,
+        ""indentationSize"": 2,
+
+        ""NewLinesForBracesInTypes"": false,
+        ""NewLinesForBracesInMethods"": false,
+        ""NewLinesForBracesInProperties"": false,
+        ""NewLinesForBracesInAccessors"": false,
+        ""NewLinesForBracesInAnonymousMethods"": false,
+        ""NewLinesForBracesInControlBlocks"": false,
+        ""NewLinesForBracesInAnonymousTypes"": false,
+        ""NewLinesForBracesInObjectCollectionArrayInitializers"": false,
+        ""NewLinesForBracesInLambdaExpressionBody"": false,
+
+        ""NewLineForElse"": false,
+        ""NewLineForCatch"": false,
+        ""NewLineForFinally"": false,
+        ""NewLineForMembersInObjectInit"": false,
+        ""NewLineForMembersInAnonymousTypes"": false,
+        ""NewLineForClausesInQuery"": false
+        }
+}"
+                );
+        }
+
+        private bool HasOmniSharpConfig()
+        {
+            string configFilePath = Path.Combine(
+                m_ProjectGeneration.ProjectDirectory,
+                "omnisharp.json"
+            );
+
+            return File.Exists(configFilePath);
+        }
+
+        private void CreateEditorConfig()
+        {
+            string configFilePath = Path.Combine(
+                m_ProjectGeneration.ProjectDirectory,
+                ".editorconfig"
+            );
+
+            File.WriteAllText(
+                configFilePath,
+                @"root=true
+
+[*.cs]
+dotnet_diagnostic.IDE0051.severity = none"
+            );
+        }
+
+        private bool HasEditorConfig()
+        {
+            string configFilePath = Path.Combine(
+                m_ProjectGeneration.ProjectDirectory,
+                ".editorconfig"
+            );
+
+            return File.Exists(configFilePath);
+        }
+
         static bool SupportsExtension(string path)
         {
             var extension = Path.GetExtension(path);
@@ -256,12 +432,16 @@ namespace VSCodeEditor
 
         static VSCodeScriptEditor()
         {
-            var editor = new VSCodeScriptEditor(new VSCodeDiscovery(), new ProjectGeneration(Directory.GetParent(Application.dataPath).FullName));
+            var editor = new VSCodeScriptEditor(
+                new VSCodeDiscovery(),
+                new ProjectGeneration(Directory.GetParent(Application.dataPath).FullName)
+            );
             CodeEditor.Register(editor);
 
             if (IsVSCodeInstallation(CodeEditor.CurrentEditorInstallation))
             {
                 editor.CreateIfDoesntExist();
+
             }
         }
 
@@ -273,8 +453,11 @@ namespace VSCodeEditor
             }
 
             var lowerCasePath = path.ToLower();
-            var filename = Path
-                .GetFileName(lowerCasePath.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar))
+            var filename = Path.GetFileName(
+                    lowerCasePath
+                        .Replace('\\', Path.DirectorySeparatorChar)
+                        .Replace('/', Path.DirectorySeparatorChar)
+                )
                 .Replace(" ", "");
             return k_SupportedFileNames.Contains(filename);
         }

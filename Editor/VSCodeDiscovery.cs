@@ -79,17 +79,26 @@ namespace VSCodeEditor
                     };
                     break;
                 }
-                case 2 when existingPaths.Any(path => !(path.Substring(lcp.Length).Contains("/") || path.Substring(lcp.Length).Contains("\\"))):
+                case 2
+                    when existingPaths.Any(
+                        path =>
+                            !(path[lcp.Length..].Contains("/") || path[lcp.Length..].Contains("\\"))
+                    ):
                 {
                     goto case 1;
                 }
                 default:
                 {
-                    m_Installations = existingPaths.Select(path => new CodeEditor.Installation
-                    {
-                        Name = $"Visual Studio Code Insiders ({path.Substring(lcp.Length)})",
-                        Path = path
-                    }).ToList();
+                    m_Installations = existingPaths
+                        .Select(
+                            path =>
+                                new CodeEditor.Installation
+                                {
+                                    Name = $"Visual Studio Code Insiders ({path[lcp.Length..]})",
+                                    Path = path
+                                }
+                        )
+                        .ToList();
 
                     break;
                 }
@@ -116,14 +125,15 @@ namespace VSCodeEditor
                 baseLength = Math.Min(baseLength, paths[pathIndex].Length);
                 for (var i = 0; i < baseLength; i++)
                 {
-                    if (paths[pathIndex][i] == paths[0][i]) continue;
+                    if (paths[pathIndex][i] == paths[0][i])
+                        continue;
 
                     baseLength = i;
                     break;
                 }
             }
 
-            return paths[0].Substring(0, baseLength);
+            return paths[0][..baseLength];
         }
 
         static bool VSCodeExists(string path)
