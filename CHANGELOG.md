@@ -1,5 +1,6 @@
 # Code Editor Package for Visual Studio Code
 
+<<<<<<< HEAD
 ## [1.3.0] - 2023-04-01
 
 - Added complete SDK support, this allows you to use Omnisharp's useModernNet in your project (Special thanks to Andrew Spiering @wackoisgod)
@@ -8,6 +9,8 @@
 - Added support for .Net 4.8 API compatibility level for 2022.1 and above
 - Fixed failure while loading the analyzer reference 'Unity.SourceGenerators'
 
+=======
+>>>>>>> 8298f45 (Better Support & Formatting)
 ## [1.2.7] - 2023-03-19
 
 - Added Unity Roslyn analyzers support (See <https://code.visualstudio.com/docs/other/unity#_enabling-unity-warnings>)
