@@ -798,10 +798,6 @@ namespace VSCodeEditor
 
         static string GenerateAnalyserItemGroup(string[] paths)
         {
-            //   <ItemGroup>
-            //      <Analyzer Include="..\packages\Comments_analyser.1.0.6626.21356\analyzers\dotnet\cs\Comments_analyser.dll" />
-            //      <Analyzer Include="..\packages\UnityEngineAnalyzer.1.0.0.0\analyzers\dotnet\cs\UnityEngineAnalyzer.dll" />
-            //  </ItemGroup>
             if (paths.Length == 0)
             {
                 return string.Empty;
@@ -924,7 +920,7 @@ namespace VSCodeEditor
                 .Append(k_WindowsNewline);
             builder
                 .Append(@"    <TargetFrameworkVersion>")
-                .Append(k_TargetFrameworkVersion)
+                .Append(GetTargetFrameworkVersion(PlayerSettings.GetApiCompatibilityLevel(UnityEditor.Build.NamedBuildTarget.Standalone)))
                 .Append("</TargetFrameworkVersion>")
                 .Append(k_WindowsNewline);
             builder.Append(@"    <FileAlignment>512</FileAlignment>").Append(k_WindowsNewline);
@@ -983,7 +979,35 @@ namespace VSCodeEditor
             builder.Append(@"  <ItemGroup>").Append(k_WindowsNewline);
         }
 
-        void SyncSolution(IEnumerable<Assembly> assemblies)
+            private static string GetTargetFrameworkVersion(ApiCompatibilityLevel netSettings)
+        {
+            switch (netSettings)
+            {
+                case ApiCompatibilityLevel.NET_2_0:
+                case ApiCompatibilityLevel.NET_2_0_Subset:
+#if !UNITY_2021_1_OR_NEWER
+                case ApiCompatibilityLevel.NET_4_6:
+#endif
+                case ApiCompatibilityLevel.NET_Web:
+                case ApiCompatibilityLevel.NET_Micro:
+                    return k_TargetFrameworkVersion;
+#if !UNITY_2021_1_OR_NEWER
+                case ApiCompatibilityLevel.NET_Standard_2_0:
+                    return "netstandard2.0";
+#endif
+#if UNITY_2021_1_OR_NEWER
+                case ApiCompatibilityLevel.NET_Standard:
+                    return "netstandard2.1";
+                case ApiCompatibilityLevel.NET_Unity_4_8:
+                    return "v4.8";
+#else
+#endif
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+    void SyncSolution(IEnumerable<Assembly> assemblies)
         {
             SyncSolutionFileIfNotChanged(SolutionFile(), SolutionText(assemblies));
         }
