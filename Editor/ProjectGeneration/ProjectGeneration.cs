@@ -33,12 +33,6 @@ namespace VSCodeEditor
             CSharp
         }
 
-#if !UNITY_2022_2_OR_NEWER
-
-        public static readonly string MSBuildNamespaceUri =
-            "http://schemas.microsoft.com/developer/msbuild/2003";
-#endif
-
         const string k_WindowsNewline = "\r\n";
 
         const string k_SettingsJson =
@@ -462,7 +456,12 @@ namespace VSCodeEditor
         Dictionary<string, string> GenerateAllAssetProjectParts()
         {
             Dictionary<string, StringBuilder> stringBuilders = new();
-
+#else 
+        Dictionary<string, List<XElement>> GenerateAllAssetProjectParts()
+        {
+            Dictionary<string, List<XElement>> stringBuilders =
+                new Dictionary<string, List<XElement>>();
+#endif
             foreach (string asset in m_AssemblyNameProvider.GetAllAssetPaths())
             {
                 // Exclude files coming from packages except if they are internalized.
@@ -490,88 +489,44 @@ namespace VSCodeEditor
 
                     if (!stringBuilders.TryGetValue(assemblyName, out var projectBuilder))
                     {
+#if !UNITY_2022_2_OR_NEWER
                         projectBuilder = new StringBuilder();
+#else
+                        projectBuilder = new List<XElement>();
+#endif
                         stringBuilders[assemblyName] = projectBuilder;
                     }
 
+#if !UNITY_2022_2_OR_NEWER
                     projectBuilder
                         .Append("     <None Include=\"")
                         .Append(m_FileIOProvider.EscapedRelativePathFor(asset, ProjectDirectory))
                         .Append("\" />")
                         .Append(k_WindowsNewline);
-                }
-            }
-
-            var result = new Dictionary<string, string>();
-
-            foreach (var entry in stringBuilders)
-                result[entry.Key] = entry.Value.ToString();
-
-            return result;
-        }
-
-        void SyncProject(
-            Assembly assembly,
-            Dictionary<string, string> allAssetsProjectParts,
-            List<ResponseFileData> responseFilesData
-        )
-        {
-            SyncProjectFileIfNotChanged(
-                ProjectFile(assembly),
-                ProjectText(assembly, allAssetsProjectParts, responseFilesData)
-            );
-        }
-#else
-        Dictionary<string, List<XElement>> GenerateAllAssetProjectParts()
-        {
-            Dictionary<string, List<XElement>> stringBuilders =
-                new Dictionary<string, List<XElement>>();
-
-            foreach (string asset in m_AssemblyNameProvider.GetAllAssetPaths())
-            {
-                // Exclude files coming from packages except if they are internalized.
-                // TODO: We need assets from the assembly API
-                if (m_AssemblyNameProvider.IsInternalizedPackagePath(asset))
-                {
-                    continue;
-                }
-
-                string extension = Path.GetExtension(asset);
-                if (
-                    IsSupportedExtension(extension)
-                    && ScriptingLanguage.None == ScriptingLanguageFor(extension)
-                )
-                {
-                    // Find assembly the asset belongs to by adding script extension and using compilation pipeline.
-                    var assemblyName = m_AssemblyNameProvider.GetAssemblyNameFromScriptPath(asset);
-
-                    if (string.IsNullOrEmpty(assemblyName))
-                    {
-                        continue;
-                    }
-
-                    assemblyName = Path.GetFileNameWithoutExtension(assemblyName);
-
-                    if (!stringBuilders.TryGetValue(assemblyName, out var projectBuilder))
-                    {
-                        projectBuilder = new List<XElement>();
-                        stringBuilders[assemblyName] = projectBuilder;
-                    }
-
+#else   
                     var noneElement = new XElement("None");
                     noneElement.SetAttributeValue(
                         "Include",
                         m_FileIOProvider.EscapedRelativePathFor(asset, ProjectDirectory)
                     );
                     projectBuilder.Add(noneElement);
+#endif
                 }
             }
 
+#if !UNITY_2022_2_OR_NEWER
+            var result = new Dictionary<string, string>();
+ #else
             var result = new Dictionary<string, List<XElement>>();
+#endif
 
             foreach (var entry in stringBuilders)
             {
+#if !UNITY_2022_2_OR_NEWER
+                result[entry.Key] = entry.Value.ToString();
+#else
                 result[entry.Key] = entry.Value;
+#endif
             }
 
             return result;
@@ -579,7 +534,11 @@ namespace VSCodeEditor
 
         void SyncProject(
             Assembly assembly,
+#if !UNITY_2022_2_OR_NEWER
+            Dictionary<string, string> allAssetsProjectParts,
+#else
             Dictionary<string, List<XElement>> allAssetsProjectParts,
+#endif
             List<ResponseFileData> responseFilesData
         )
         {
@@ -588,7 +547,6 @@ namespace VSCodeEditor
                 ProjectText(assembly, allAssetsProjectParts, responseFilesData)
             );
         }
-#endif
 
         void SyncProjectFileIfNotChanged(string path, string newContents)
         {
@@ -924,24 +882,9 @@ namespace VSCodeEditor
             definePropertyGroup.Add(definesElement);
             builder.Add(definePropertyGroup);
 
-            //var analyzers = RetrieveRoslynAnalyzers(assembly, otherArguments);
             var ruleSets = GenerateRoslynAnalyzerRulesetPath(assembly, otherArguments);
-            if (ruleSets.Length != 0) //|| analyzers.Length != 0 )
+            if (ruleSets.Length != 0)
             {
-                /*
-                var analyzerItemGroup = new XElement("ItemGroup");
-                
-                
-                if (analyzers.Length != 0)
-                {
-                    foreach (var item in analyzers)
-                    {
-                        var attr = new XAttribute("Include", item);
-                        var analElement = new XElement("Analyzer", attr);
-                        analyzerItemGroup.Add(analElement);
-                    }
-                }
-                */
 
 
                 if (ruleSets.Length != 0)
@@ -953,7 +896,6 @@ namespace VSCodeEditor
                         commonPropertyGroup.Add(ruleElement);
                     }
                 }
-                //builder.Add(analyzerItemGroup);
             }
 
             builder.Add(commonPropertyGroup);
@@ -1176,7 +1118,7 @@ namespace VSCodeEditor
                 .Append(@"<Project ToolsVersion=""")
                 .Append(k_ToolsVersion)
                 .Append(@""" DefaultTargets=""Build"" xmlns=""")
-                .Append(MSBuildNamespaceUri)
+                .Append("http://schemas.microsoft.com/developer/msbuild/2003")
                 .Append(@""">")
                 .Append(k_WindowsNewline);
             builder.Append(@"  <PropertyGroup>").Append(k_WindowsNewline);
@@ -1308,7 +1250,11 @@ namespace VSCodeEditor
                 case ApiCompatibilityLevel.NET_Standard:
                     return "netstandard2.1";
                 case ApiCompatibilityLevel.NET_Unity_4_8:
-                    return k_TargetFrameworkVersion;
+                #if !UNITY_2022_2_OR_NEWER
+                    return "v4.8";
+                #else
+                    return "net48";
+                #endif
 #else
 #endif
                 default:
