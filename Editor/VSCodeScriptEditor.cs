@@ -383,17 +383,8 @@ namespace VSCodeEditor
         ""enableEditorConfigSupport"": true,
         ""sdkIncludePrereleases"": false,
         ""organizeImportsOnFormat"": true,
-        ""threadsToUseForAnalyzers"": true,";
-
-            //Add the useModernNet option if the user is using version 2022.2 or higher
-#if UNITY_2022_2_OR_NEWER
-            roslynExtensionsOptions +=
-                @"
-        ""useModernNet"": true,";
-#endif
-
-            roslynExtensionsOptions +=
-                @"
+        ""threadsToUseForAnalyzers"": true,
+        ""useModernNet"": true,
         ""documentAnalysisTimeoutMs"": 600000,
         ""LocationPaths"": [""./NuGet""]
     }
