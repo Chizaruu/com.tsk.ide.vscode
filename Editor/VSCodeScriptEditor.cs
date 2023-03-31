@@ -302,7 +302,7 @@ namespace VSCodeEditor
         private void CreateNuGetFolder()
         {
             var nugetFolder = Path.Combine(m_ProjectGeneration.ProjectDirectory, "NuGet");
-            
+
             Directory.CreateDirectory(nugetFolder);
         }
 
@@ -344,38 +344,61 @@ namespace VSCodeEditor
                 "omnisharp.json"
             );
 
-                File.WriteAllText(
-                    configFilePath,
-                    @"{
+            const string Contents =
+                @"{
+        ""FormattingOptions"": {
+            ""newLine"": ""\n"",
+            ""useTabs"": false,
+            ""tabSize"": 2,
+            ""indentationSize"": 2,
+
+            ""NewLinesForBracesInTypes"": false,
+            ""NewLinesForBracesInMethods"": false,
+            ""NewLinesForBracesInProperties"": false,
+            ""NewLinesForBracesInAccessors"": false,
+            ""NewLinesForBracesInAnonymousMethods"": false,
+            ""NewLinesForBracesInControlBlocks"": false,
+            ""NewLinesForBracesInAnonymousTypes"": false,
+            ""NewLinesForBracesInObjectCollectionArrayInitializers"": false,
+            ""NewLinesForBracesInLambdaExpressionBody"": false,
+
+            ""NewLineForElse"": false,
+            ""NewLineForCatch"": false,
+            ""NewLineForFinally"": false,
+            ""NewLineForMembersInObjectInit"": false,
+            ""NewLineForMembersInAnonymousTypes"": false,
+            ""NewLineForClausesInQuery"": false
+            },";
+
+            File.WriteAllText(
+                configFilePath,
+                /*lang=json,strict*/
+                Contents
+            );
+
+            string roslynExtensionsOptions =
+                @"
     ""RoslynExtensionsOptions"": {
-        ""EnableAnalyzersSupport"": true,
+        ""enableRoslynAnalyzers"": true,
+        ""enableEditorConfigSupport"": true,
+        ""sdkIncludePrereleases"": false,
+        ""organizeImportsOnFormat"": true,
+        ""threadsToUseForAnalyzers"": true,";
+
+            //Add the useModernNet option if the user is using version 2022.2 or higher
+#if UNITY_2022_2_OR_NEWER
+            roslynExtensionsOptions +=
+                @"
+        ""useModernNet"": true,";
+#endif
+
+            roslynExtensionsOptions +=
+                @"
+        ""documentAnalysisTimeoutMs"": 600000,
         ""LocationPaths"": [""./NuGet""]
-    },
-    ""FormattingOptions"": {
-        ""newLine"": ""\n"",
-        ""useTabs"": false,
-        ""tabSize"": 2,
-        ""indentationSize"": 2,
-
-        ""NewLinesForBracesInTypes"": false,
-        ""NewLinesForBracesInMethods"": false,
-        ""NewLinesForBracesInProperties"": false,
-        ""NewLinesForBracesInAccessors"": false,
-        ""NewLinesForBracesInAnonymousMethods"": false,
-        ""NewLinesForBracesInControlBlocks"": false,
-        ""NewLinesForBracesInAnonymousTypes"": false,
-        ""NewLinesForBracesInObjectCollectionArrayInitializers"": false,
-        ""NewLinesForBracesInLambdaExpressionBody"": false,
-
-        ""NewLineForElse"": false,
-        ""NewLineForCatch"": false,
-        ""NewLineForFinally"": false,
-        ""NewLineForMembersInObjectInit"": false,
-        ""NewLineForMembersInAnonymousTypes"": false,
-        ""NewLineForClausesInQuery"": false
-        }
-}"
-                );
+    }
+}";
+            File.AppendAllText(configFilePath, roslynExtensionsOptions);
         }
 
         private bool HasOmniSharpConfig()
@@ -441,7 +464,6 @@ dotnet_diagnostic.IDE0051.severity = none"
             if (IsVSCodeInstallation(CodeEditor.CurrentEditorInstallation))
             {
                 editor.CreateIfDoesntExist();
-
             }
         }
 
