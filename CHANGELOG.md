@@ -1,6 +1,10 @@
 # Code Editor Package for Visual Studio Code
 
-<<<<<<< HEAD
+## [1.3.1] - 2023-04-01
+
+- Moved .omnisharp, .editorconfig, and analyzer generation to ProjectGeneration.cs to be in line with the rest of the project
+- Simplified XElement creation in ProjectGeneration.cs to be more readable
+
 ## [1.3.0] - 2023-04-01
 
 - Added complete SDK support, this allows you to use Omnisharp's useModernNet in your project (Special thanks to Andrew Spiering @wackoisgod)
@@ -9,8 +13,6 @@
 - Added support for .Net 4.8 API compatibility level for 2022.1 and above
 - Fixed failure while loading the analyzer reference 'Unity.SourceGenerators'
 
-=======
->>>>>>> 8298f45 (Better Support & Formatting)
 ## [1.2.7] - 2023-03-19
 
 - Added Unity Roslyn analyzers support (See <https://code.visualstudio.com/docs/other/unity#_enabling-unity-warnings>)
@@ -98,6 +100,6 @@ Add %LOCALAPPDATA%/Programs to the path of install paths.
 
 ## [1.0.3] - 2019-01-01
 
-### This is the first release of *Unity Package vscode_editor*
+### This is the first release of _Unity Package vscode_editor_
 
 Using the newly created api to integrate Visual Studio Code with Unity.

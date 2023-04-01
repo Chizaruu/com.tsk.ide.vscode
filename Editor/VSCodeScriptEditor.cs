@@ -1,10 +1,10 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Diagnostics;
+using Unity.CodeEditor;
 using UnityEditor;
 using UnityEngine;
-using Unity.CodeEditor;
 
 namespace VSCodeEditor
 {
@@ -179,26 +179,6 @@ namespace VSCodeEditor
             {
                 m_ProjectGeneration.Sync();
             }
-
-            if (!HasNuGetFolder())
-            {
-                CreateNuGetFolder();
-            }
-
-            if (!HasRoslynDLL())
-            {
-                CreateRoslynDLL();
-            }
-
-            if (!HasOmniSharpConfig())
-            {
-                CreateOmniSharpConfig();
-            }
-
-            if (!HasEditorConfig())
-            {
-                CreateEditorConfig();
-            }
         }
 
         public void SyncIfNeeded(
@@ -299,174 +279,6 @@ namespace VSCodeEditor
             return true;
         }
 
-        private void CreateNuGetFolder()
-        {
-            var nugetFolder = Path.Combine(m_ProjectGeneration.ProjectDirectory, "NuGet");
-<<<<<<< HEAD
-
-=======
-            
->>>>>>> 8298f45 (Better Support & Formatting)
-            Directory.CreateDirectory(nugetFolder);
-        }
-
-        private bool HasNuGetFolder()
-        {
-            var nugetFolder = Path.Combine(m_ProjectGeneration.ProjectDirectory, "NuGet");
-            return Directory.Exists(nugetFolder);
-        }
-
-        private void CreateRoslynDLL()
-        {
-            string unityRoslynDLL = Path.Combine(
-                m_ProjectGeneration.ProjectDirectory,
-                "Packages",
-                "com.tsk.ide.vscode",
-                "Editor",
-                "NuGet",
-                "Microsoft.Unity.Analyzers.dll.koala"
-            );
-
-            string nugetFolder = Path.Combine(m_ProjectGeneration.ProjectDirectory, "NuGet");
-            string nugetRoslynDLL = Path.Combine(nugetFolder, "Microsoft.Unity.Analyzers.dll");
-
-            File.Copy(unityRoslynDLL, nugetRoslynDLL);
-        }
-
-        private bool HasRoslynDLL()
-        {
-            string nugetFolder = Path.Combine(m_ProjectGeneration.ProjectDirectory, "NuGet");
-            string nugetRoslynDLL = Path.Combine(nugetFolder, "Microsoft.Unity.Analyzers.dll");
-
-            return File.Exists(nugetRoslynDLL);
-        }
-
-        private void CreateOmniSharpConfig()
-        {
-            string configFilePath = Path.Combine(
-                m_ProjectGeneration.ProjectDirectory,
-                "omnisharp.json"
-            );
-
-<<<<<<< HEAD
-            const string Contents =
-                @"{
-        ""FormattingOptions"": {
-            ""newLine"": ""\n"",
-            ""useTabs"": false,
-            ""tabSize"": 2,
-            ""indentationSize"": 2,
-
-            ""NewLinesForBracesInTypes"": false,
-            ""NewLinesForBracesInMethods"": false,
-            ""NewLinesForBracesInProperties"": false,
-            ""NewLinesForBracesInAccessors"": false,
-            ""NewLinesForBracesInAnonymousMethods"": false,
-            ""NewLinesForBracesInControlBlocks"": false,
-            ""NewLinesForBracesInAnonymousTypes"": false,
-            ""NewLinesForBracesInObjectCollectionArrayInitializers"": false,
-            ""NewLinesForBracesInLambdaExpressionBody"": false,
-
-            ""NewLineForElse"": false,
-            ""NewLineForCatch"": false,
-            ""NewLineForFinally"": false,
-            ""NewLineForMembersInObjectInit"": false,
-            ""NewLineForMembersInAnonymousTypes"": false,
-            ""NewLineForClausesInQuery"": false
-            },";
-
-            File.WriteAllText(
-                configFilePath,
-                /*lang=json,strict*/
-                Contents
-            );
-
-            string roslynExtensionsOptions =
-                @"
-    ""RoslynExtensionsOptions"": {
-        ""enableRoslynAnalyzers"": true,
-        ""enableEditorConfigSupport"": true,
-        ""sdkIncludePrereleases"": false,
-        ""organizeImportsOnFormat"": true,
-        ""threadsToUseForAnalyzers"": true,
-        ""useModernNet"": true,
-        ""documentAnalysisTimeoutMs"": 600000,
-        ""LocationPaths"": [""./NuGet""]
-    }
-}";
-            File.AppendAllText(configFilePath, roslynExtensionsOptions);
-=======
-                File.WriteAllText(
-                    configFilePath,
-                    @"{
-    ""RoslynExtensionsOptions"": {
-        ""EnableAnalyzersSupport"": true,
-        ""LocationPaths"": [""./NuGet""]
-    },
-    ""FormattingOptions"": {
-        ""newLine"": ""\n"",
-        ""useTabs"": false,
-        ""tabSize"": 2,
-        ""indentationSize"": 2,
-
-        ""NewLinesForBracesInTypes"": false,
-        ""NewLinesForBracesInMethods"": false,
-        ""NewLinesForBracesInProperties"": false,
-        ""NewLinesForBracesInAccessors"": false,
-        ""NewLinesForBracesInAnonymousMethods"": false,
-        ""NewLinesForBracesInControlBlocks"": false,
-        ""NewLinesForBracesInAnonymousTypes"": false,
-        ""NewLinesForBracesInObjectCollectionArrayInitializers"": false,
-        ""NewLinesForBracesInLambdaExpressionBody"": false,
-
-        ""NewLineForElse"": false,
-        ""NewLineForCatch"": false,
-        ""NewLineForFinally"": false,
-        ""NewLineForMembersInObjectInit"": false,
-        ""NewLineForMembersInAnonymousTypes"": false,
-        ""NewLineForClausesInQuery"": false
-        }
-}"
-                );
->>>>>>> 8298f45 (Better Support & Formatting)
-        }
-
-        private bool HasOmniSharpConfig()
-        {
-            string configFilePath = Path.Combine(
-                m_ProjectGeneration.ProjectDirectory,
-                "omnisharp.json"
-            );
-
-            return File.Exists(configFilePath);
-        }
-
-        private void CreateEditorConfig()
-        {
-            string configFilePath = Path.Combine(
-                m_ProjectGeneration.ProjectDirectory,
-                ".editorconfig"
-            );
-
-            File.WriteAllText(
-                configFilePath,
-                @"root=true
-
-[*.cs]
-dotnet_diagnostic.IDE0051.severity = none"
-            );
-        }
-
-        private bool HasEditorConfig()
-        {
-            string configFilePath = Path.Combine(
-                m_ProjectGeneration.ProjectDirectory,
-                ".editorconfig"
-            );
-
-            return File.Exists(configFilePath);
-        }
-
         static bool SupportsExtension(string path)
         {
             var extension = Path.GetExtension(path);
@@ -494,7 +306,6 @@ dotnet_diagnostic.IDE0051.severity = none"
             if (IsVSCodeInstallation(CodeEditor.CurrentEditorInstallation))
             {
                 editor.CreateIfDoesntExist();
-
             }
         }
 

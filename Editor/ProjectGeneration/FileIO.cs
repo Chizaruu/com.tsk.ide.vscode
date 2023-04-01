@@ -12,6 +12,8 @@ namespace VSCodeEditor
         string ReadAllText(string fileName);
         void WriteAllText(string fileName, string content);
 
+        void Copy(string sourceFileName, string destFileName, bool overwrite);
+
         void CreateDirectory(string pathName);
         string EscapedRelativePathFor(string file, string projectDirectory);
     }
@@ -31,6 +33,11 @@ namespace VSCodeEditor
         public void WriteAllText(string fileName, string content)
         {
             File.WriteAllText(fileName, content, Encoding.UTF8);
+        }
+
+        public void Copy(string sourceFileName, string destFileName, bool overwrite)
+        {
+            File.Copy(sourceFileName, destFileName, overwrite);
         }
 
         public void CreateDirectory(string pathName)

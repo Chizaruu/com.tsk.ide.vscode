@@ -33,16 +33,11 @@ namespace VSCodeEditor
             CSharp
         }
 
-<<<<<<< HEAD
-=======
-        public static readonly string MSBuildNamespaceUri =
-            "http://schemas.microsoft.com/developer/msbuild/2003";
-
->>>>>>> 8298f45 (Better Support & Formatting)
         const string k_WindowsNewline = "\r\n";
 
         const string k_SettingsJson =
-            @"{
+                                 /*lang=json,strict*/
+                                 @"{
     ""files.exclude"":
     {
         ""**/.DS_Store"":true,
@@ -106,6 +101,34 @@ namespace VSCodeEditor
 		}
 	]
 }";
+
+        const string k_OmniSharpJson =
+            @"{
+    ""RoslynExtensionsOptions"": {
+        ""enableRoslynAnalyzers"": true,
+        ""enableEditorConfigSupport"": true,
+        ""sdkIncludePrereleases"": false,
+        ""organizeImportsOnFormat"": true,
+        ""threadsToUseForAnalyzers"": true,
+        ""useModernNet"": true,
+        ""documentAnalysisTimeoutMs"": 600000,
+        ""LocationPaths"": [""./NuGet""]
+    }
+}";
+
+        const string k_EditorConfig =
+            @"# EditorConfig is awesome: http://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# 4 space indentation
+[*.cs]
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+";
+
 
         /// <summary>
         /// Map source extensions to ScriptingLanguages
@@ -171,7 +194,6 @@ namespace VSCodeEditor
         const string k_ToolsVersion = "4.0";
         const string k_ProductVersion = "10.0.20506";
         const string k_BaseDirectory = ".";
-<<<<<<< HEAD
 
 #if UNITY_2022_1_OR_NEWER
         const string k_TargetFrameworkVersion = "net48";
@@ -179,17 +201,14 @@ namespace VSCodeEditor
         const string k_TargetFrameworkVersion = "net471";
 #endif
 
-=======
-        const string k_TargetFrameworkVersion = "v4.7.1";
-
->>>>>>> 8298f45 (Better Support & Formatting)
         public ProjectGeneration(string tempDirectory)
             : this(
                 tempDirectory,
                 new AssemblyNameProvider(),
                 new FileIOProvider(),
                 new GUIDProvider()
-            ) { }
+            )
+        { }
 
         public ProjectGeneration(
             string tempDirectory,
@@ -433,6 +452,9 @@ namespace VSCodeEditor
 
             WriteVSCodeSettingsFiles();
             WriteWorkspaceFile();
+            WriteOmniSharpConfigFile();
+            WriteEditorConfigFile();
+            WriteUnityAnalyzersFile();
         }
 
         List<ResponseFileData> ParseResponseFileData(Assembly assembly)
@@ -470,13 +492,8 @@ namespace VSCodeEditor
 
         Dictionary<string, List<XElement>> GenerateAllAssetProjectParts()
         {
-<<<<<<< HEAD
             Dictionary<string, List<XElement>> stringBuilders =
-                new Dictionary<string, List<XElement>>();
-=======
-            Dictionary<string, StringBuilder> stringBuilders = new();
-
->>>>>>> 8298f45 (Better Support & Formatting)
+                new();
             foreach (string asset in m_AssemblyNameProvider.GetAllAssetPaths())
             {
                 // Exclude files coming from packages except if they are internalized.
@@ -508,20 +525,12 @@ namespace VSCodeEditor
                         stringBuilders[assemblyName] = projectBuilder;
                     }
 
-<<<<<<< HEAD
                     var noneElement = new XElement("None");
                     noneElement.SetAttributeValue(
                         "Include",
                         m_FileIOProvider.EscapedRelativePathFor(asset, ProjectDirectory)
                     );
                     projectBuilder.Add(noneElement);
-=======
-                    projectBuilder
-                        .Append("     <None Include=\"")
-                        .Append(m_FileIOProvider.EscapedRelativePathFor(asset, ProjectDirectory))
-                        .Append("\" />")
-                        .Append(k_WindowsNewline);
->>>>>>> 8298f45 (Better Support & Formatting)
                 }
             }
 
@@ -537,11 +546,7 @@ namespace VSCodeEditor
 
         void SyncProject(
             Assembly assembly,
-<<<<<<< HEAD
             Dictionary<string, List<XElement>> allAssetsProjectParts,
-=======
-            Dictionary<string, string> allAssetsProjectParts,
->>>>>>> 8298f45 (Better Support & Formatting)
             List<ResponseFileData> responseFilesData
         )
         {
@@ -604,11 +609,7 @@ namespace VSCodeEditor
 
         string ProjectText(
             Assembly assembly,
-<<<<<<< HEAD
             Dictionary<string, List<XElement>> allAssetsProjectParts,
-=======
-            Dictionary<string, string> allAssetsProjectParts,
->>>>>>> 8298f45 (Better Support & Formatting)
             List<ResponseFileData> responseFilesData
         )
         {
@@ -629,7 +630,6 @@ namespace VSCodeEditor
             // we have source files
             if (assembly.sourceFiles.Length != 0)
             {
-<<<<<<< HEAD
                 var itemGroup = new XElement("ItemGroup");
 
                 foreach (var file in assembly.sourceFiles)
@@ -652,21 +652,6 @@ namespace VSCodeEditor
                 itemGroup.Add(additionalAssetsForProject);
                 project.Add(itemGroup);
             }
-=======
-                var fullFile = m_FileIOProvider.EscapedRelativePathFor(file, ProjectDirectory);
-                projectBuilder
-                    .Append("     <Compile Include=\"")
-                    .Append(fullFile)
-                    .Append("\" />")
-                    .Append(k_WindowsNewline);
-            }
-
-            // Append additional non-script files that should be included in project generation.
-            if (
-                allAssetsProjectParts.TryGetValue(assembly.name, out var additionalAssetsForProject)
-            )
-                projectBuilder.Append(additionalAssetsForProject);
->>>>>>> 8298f45 (Better Support & Formatting)
 
             var responseRefs = responseFilesData.SelectMany(
                 x => x.FullPathReferences.Select(r => r)
@@ -680,7 +665,6 @@ namespace VSCodeEditor
 
             if (allReferences.Any())
             {
-<<<<<<< HEAD
                 var refItemGroup = new XElement("ItemGroup");
                 foreach (var reference in allReferences)
                 {
@@ -688,41 +672,6 @@ namespace VSCodeEditor
                         ? reference
                         : Path.Combine(ProjectDirectory, reference);
                     AppendReference(fullReference, refItemGroup);
-=======
-                string fullReference = Path.IsPathRooted(reference)
-                    ? reference
-                    : Path.Combine(ProjectDirectory, reference);
-                AppendReference(fullReference, projectBuilder);
-            }
-
-            if (0 < assembly.assemblyReferences.Length)
-            {
-                projectBuilder.Append("  </ItemGroup>").Append(k_WindowsNewline);
-                projectBuilder.Append("  <ItemGroup>").Append(k_WindowsNewline);
-                foreach (
-                    Assembly reference in assembly.assemblyReferences.Where(
-                        i => i.sourceFiles.Any(ShouldFileBePartOfSolution)
-                    )
-                )
-                {
-                    projectBuilder
-                        .Append("    <ProjectReference Include=\"")
-                        .Append(reference.name)
-                        .Append(GetProjectExtension())
-                        .Append("\">")
-                        .Append(k_WindowsNewline);
-                    projectBuilder
-                        .Append("      <Project>{")
-                        .Append(ProjectGuid(reference.name))
-                        .Append("}</Project>")
-                        .Append(k_WindowsNewline);
-                    projectBuilder
-                        .Append("      <Name>")
-                        .Append(reference.name)
-                        .Append("</Name>")
-                        .Append(k_WindowsNewline);
-                    projectBuilder.Append("    </ProjectReference>").Append(k_WindowsNewline);
->>>>>>> 8298f45 (Better Support & Formatting)
                 }
 
                 project.Add(refItemGroup);
@@ -755,15 +704,16 @@ namespace VSCodeEditor
         {
             var escapedFullPath = SecurityElement.Escape(fullReference);
             escapedFullPath = escapedFullPath.NormalizePath();
-<<<<<<< HEAD
 
             var reference = new XElement(
                 "Reference",
                 new XAttribute("Include", Path.GetFileNameWithoutExtension(escapedFullPath))
             );
 
-            var hintPath = new XElement("HintPath");
-            hintPath.Value = escapedFullPath;
+            var hintPath = new XElement("HintPath")
+            {
+                Value = escapedFullPath
+            };
             reference.Add(hintPath);
             projectBuilder.Add(reference);
         }
@@ -780,16 +730,20 @@ namespace VSCodeEditor
             var langVersion = GenerateLangVersion(otherArguments["langversion"], assembly);
 
             var commonPropertyGroup = new XElement("PropertyGroup");
-            var langElement = new XElement("LangVersion");
-            langElement.Value = langVersion;
+            var langElement = new XElement("LangVersion")
+            {
+                Value = langVersion
+            };
             commonPropertyGroup.Add(langElement);
 
             // Allow unsafe code
             bool allowUnsafeCode =
                 assembly.compilerOptions.AllowUnsafeCode | responseFilesData.Any(x => x.Unsafe);
 
-            var unsafeElement = new XElement("AllowUnsafeBlocks");
-            unsafeElement.Value = allowUnsafeCode.ToString();
+            var unsafeElement = new XElement("AllowUnsafeBlocks")
+            {
+                Value = allowUnsafeCode.ToString()
+            };
             commonPropertyGroup.Add(unsafeElement);
 
             var warningLevel = new XElement("WarningLevel", "4");
@@ -812,8 +766,10 @@ namespace VSCodeEditor
                     .ToArray()
             );
             var definePropertyGroup = new XElement("PropertyGroup");
-            var definesElement = new XElement("DefineConstants");
-            definesElement.Value = defines;
+            var definesElement = new XElement("DefineConstants")
+            {
+                Value = defines
+            };
             definePropertyGroup.Add(definesElement);
             builder.Add(definePropertyGroup);
 
@@ -825,27 +781,16 @@ namespace VSCodeEditor
                 {
                     foreach (var item in ruleSets)
                     {
-                        var ruleElement = new XElement("CodeAnalysisRuleSet");
-                        ruleElement.Value = item;
+                        var ruleElement = new XElement("CodeAnalysisRuleSet")
+                        {
+                            Value = item
+                        };
                         commonPropertyGroup.Add(ruleElement);
                     }
                 }
             }
 
             builder.Add(commonPropertyGroup);
-=======
-            projectBuilder
-                .Append("    <Reference Include=\"")
-                .Append(Path.GetFileNameWithoutExtension(escapedFullPath))
-                .Append("\">")
-                .Append(k_WindowsNewline);
-            projectBuilder
-                .Append("        <HintPath>")
-                .Append(escapedFullPath)
-                .Append("</HintPath>")
-                .Append(k_WindowsNewline);
-            projectBuilder.Append("    </Reference>").Append(k_WindowsNewline);
->>>>>>> 8298f45 (Better Support & Formatting)
         }
 
         public string ProjectFile(Assembly assembly)
@@ -865,35 +810,6 @@ namespace VSCodeEditor
             Assembly assembly
         )
         {
-<<<<<<< HEAD
-=======
-            var otherArguments = GetOtherArgumentsFromResponseFilesData(responseFilesData);
-            GetProjectHeaderTemplate(
-                builder,
-                ProjectGuid(assembly.name),
-                assembly.name,
-                string.Join(
-                    ";",
-                    new[] { "DEBUG", "TRACE" }
-                        .Concat(assembly.defines)
-                        .Concat(responseFilesData.SelectMany(x => x.Defines))
-                        .Concat(EditorUserBuildSettings.activeScriptCompilationDefines)
-                        .Distinct()
-                        .ToArray()
-                ),
-                GenerateLangVersion(otherArguments["langversion"], assembly),
-                assembly.compilerOptions.AllowUnsafeCode | responseFilesData.Any(x => x.Unsafe),
-                GenerateAnalyserItemGroup(RetrieveRoslynAnalyzers(assembly, otherArguments)),
-                GenerateRoslynAnalyzerRulesetPath(assembly, otherArguments)
-            );
-        }
-
-        private static string GenerateLangVersion(
-            IEnumerable<string> langVersionList,
-            Assembly assembly
-        )
-        {
->>>>>>> 8298f45 (Better Support & Formatting)
             var langVersion = langVersionList.FirstOrDefault();
             if (!string.IsNullOrWhiteSpace(langVersion))
                 return langVersion;
@@ -904,17 +820,12 @@ namespace VSCodeEditor
 #endif
         }
 
-<<<<<<< HEAD
         private static string[] GenerateRoslynAnalyzerRulesetPath(
-=======
-        private static string GenerateRoslynAnalyzerRulesetPath(
->>>>>>> 8298f45 (Better Support & Formatting)
             Assembly assembly,
             ILookup<string, string> otherResponseFilesData
         )
         {
 #if UNITY_2020_2_OR_NEWER
-<<<<<<< HEAD
             return otherResponseFilesData["ruleset"]
                 .Append(assembly.compilerOptions.RoslynAnalyzerRulesetPath)
                 .Where(a => !string.IsNullOrEmpty(a))
@@ -926,27 +837,10 @@ namespace VSCodeEditor
                 .Distinct()
                 .Select(x => MakeAbsolutePath(x).NormalizePath())
                 .ToArray();
-=======
-            return GenerateAnalyserRuleSet(
-                otherResponseFilesData["ruleset"]
-                    .Append(assembly.compilerOptions.RoslynAnalyzerRulesetPath)
-                    .Where(a => !string.IsNullOrEmpty(a))
-                    .Distinct()
-                    .Select(x => MakeAbsolutePath(x).NormalizePath())
-                    .ToArray()
-            );
-#else
-            return GenerateAnalyserRuleSet(
-                otherResponseFilesData["ruleset"]
-                    .Distinct()
-                    .Select(x => MakeAbsolutePath(x).NormalizePath())
-                    .ToArray()
-            );
->>>>>>> 8298f45 (Better Support & Formatting)
 #endif
         }
 
-        private static string GenerateAnalyserRuleSet(string[] paths)
+        private static string GenerateAnalyzerRuleSet(string[] paths)
         {
             return paths.Length == 0
                 ? string.Empty
@@ -976,72 +870,18 @@ namespace VSCodeEditor
                                 return new KeyValuePair<string, string>(key, b[(index + 1)..]);
                             }
 
-                            const string warnaserror = "warnaserror";
-                            return b[1..].StartsWith(warnaserror)
+                            const string warnAsError = "warnaserror";
+                            return b[1..].StartsWith(warnAsError)
                                 ? new KeyValuePair<string, string>(
-                                    warnaserror,
-                                    b[(warnaserror.Length + 1)..]
+                                    warnAsError,
+                                    b[(warnAsError.Length + 1)..]
                                 )
                                 : default;
                         });
                 })
-<<<<<<< HEAD
                 .Distinct()
                 .ToLookup(o => o.Key, pair => pair.Value);
             return paths;
-=======
-                .Distinct()
-                .ToLookup(o => o.Key, pair => pair.Value);
-            return paths;
-        }
-
-        string[] RetrieveRoslynAnalyzers(Assembly assembly, ILookup<string, string> otherArguments)
-        {
-#if UNITY_2020_2_OR_NEWER
-            return otherArguments["analyzer"]
-                .Concat(otherArguments["a"])
-                .SelectMany(x => x.Split(';'))
-#if !ROSLYN_ANALYZER_FIX
-                .Concat(m_AssemblyNameProvider.GetRoslynAnalyzerPaths())
-#else
-        .Concat(assembly.compilerOptions.RoslynAnalyzerDllPaths)
-#endif
-                .Select(MakeAbsolutePath)
-                .Distinct()
-                .ToArray();
-#else
-            return otherArguments["analyzer"]
-                .Concat(otherArguments["a"])
-                .SelectMany(x => x.Split(';'))
-                .Distinct()
-                .Select(MakeAbsolutePath)
-                .ToArray();
-#endif
-        }
-
-        static string GenerateAnalyserItemGroup(string[] paths)
-        {
-            //   <ItemGroup>
-            //      <Analyzer Include="..\packages\Comments_analyser.1.0.6626.21356\analyzers\dotnet\cs\Comments_analyser.dll" />
-            //      <Analyzer Include="..\packages\UnityEngineAnalyzer.1.0.0.0\analyzers\dotnet\cs\UnityEngineAnalyzer.dll" />
-            //  </ItemGroup>
-            if (paths.Length == 0)
-            {
-                return string.Empty;
-            }
-
-            var analyserBuilder = new StringBuilder();
-            analyserBuilder.Append("  <ItemGroup>").Append(k_WindowsNewline);
-            foreach (var path in paths)
-            {
-                analyserBuilder
-                    .Append($"    <Analyzer Include=\"{path.NormalizePath()}\" />")
-                    .Append(k_WindowsNewline);
-            }
-
-            analyserBuilder.Append("  </ItemGroup>").Append(k_WindowsNewline);
-            return analyserBuilder.ToString();
->>>>>>> 8298f45 (Better Support & Formatting)
         }
 
         static string GetSolutionText()
@@ -1070,168 +910,22 @@ namespace VSCodeEditor
 
         private static string GetTargetFrameworkVersion(ApiCompatibilityLevel netSettings)
         {
-<<<<<<< HEAD
-            switch (netSettings)
+            return netSettings switch
             {
-                case ApiCompatibilityLevel.NET_2_0:
-                case ApiCompatibilityLevel.NET_2_0_Subset:
+                ApiCompatibilityLevel.NET_2_0 or ApiCompatibilityLevel.NET_2_0_Subset or
 #if !UNITY_2021_1_OR_NEWER
-                case ApiCompatibilityLevel.NET_4_6:
+                ApiCompatibilityLevel.NET_4_6 or
 #endif
-                case ApiCompatibilityLevel.NET_Web:
-                case ApiCompatibilityLevel.NET_Micro:
-                    return k_TargetFrameworkVersion;
+                ApiCompatibilityLevel.NET_Web or ApiCompatibilityLevel.NET_Micro => k_TargetFrameworkVersion,
 #if !UNITY_2021_1_OR_NEWER
-                case ApiCompatibilityLevel.NET_Standard_2_0:
-                    return "netstandard2.0";
+                ApiCompatibilityLevel.NET_Standard_2_0 => "netstandard2.0",
 #endif
 #if UNITY_2021_1_OR_NEWER
-                case ApiCompatibilityLevel.NET_Standard:
-                    return "netstandard2.1";
-                case ApiCompatibilityLevel.NET_Unity_4_8:
-                    return k_TargetFrameworkVersion;
-#else
+                ApiCompatibilityLevel.NET_Standard => "netstandard2.1",
+                ApiCompatibilityLevel.NET_Unity_4_8 => k_TargetFrameworkVersion,
 #endif
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-=======
-            return string.Join(
-                "\r\n",
-                @"  </ItemGroup>",
-                @"  <Import Project=""$(MSBuildToolsPath)\Microsoft.CSharp.targets"" />",
-                @"  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.",
-                @"       Other similar extension points exist, see Microsoft.Common.targets.",
-                @"  <Target Name=""BeforeBuild"">",
-                @"  </Target>",
-                @"  <Target Name=""AfterBuild"">",
-                @"  </Target>",
-                @"  -->",
-                @"</Project>",
-                @""
-            );
-        }
-
-        static void GetProjectHeaderTemplate(
-            StringBuilder builder,
-            string assemblyGUID,
-            string assemblyName,
-            string defines,
-            string langVersion,
-            bool allowUnsafe,
-            string analyzerBlock,
-            string rulesetBlock
-        )
-        {
-            builder.Append(@"<?xml version=""1.0"" encoding=""utf-8""?>").Append(k_WindowsNewline);
-            builder
-                .Append(@"<Project ToolsVersion=""")
-                .Append(k_ToolsVersion)
-                .Append(@""" DefaultTargets=""Build"" xmlns=""")
-                .Append(MSBuildNamespaceUri)
-                .Append(@""">")
-                .Append(k_WindowsNewline);
-            builder.Append(@"  <PropertyGroup>").Append(k_WindowsNewline);
-            builder
-                .Append(@"    <LangVersion>")
-                .Append(langVersion)
-                .Append("</LangVersion>")
-                .Append(k_WindowsNewline);
-            builder.Append(@"  </PropertyGroup>").Append(k_WindowsNewline);
-            builder.Append(@"  <PropertyGroup>").Append(k_WindowsNewline);
-            builder
-                .Append(
-                    @"    <Configuration Condition="" '$(Configuration)' == '' "">Debug</Configuration>"
-                )
-                .Append(k_WindowsNewline);
-            builder
-                .Append(@"    <Platform Condition="" '$(Platform)' == '' "">AnyCPU</Platform>")
-                .Append(k_WindowsNewline);
-            builder
-                .Append(@"    <ProductVersion>")
-                .Append(k_ProductVersion)
-                .Append("</ProductVersion>")
-                .Append(k_WindowsNewline);
-            builder.Append(@"    <SchemaVersion>2.0</SchemaVersion>").Append(k_WindowsNewline);
-            builder
-                .Append(@"    <RootNamespace>")
-                .Append(EditorSettings.projectGenerationRootNamespace)
-                .Append("</RootNamespace>")
-                .Append(k_WindowsNewline);
-            builder
-                .Append(@"    <ProjectGuid>{")
-                .Append(assemblyGUID)
-                .Append("}</ProjectGuid>")
-                .Append(k_WindowsNewline);
-            builder.Append(@"    <OutputType>Library</OutputType>").Append(k_WindowsNewline);
-            builder
-                .Append(@"    <AppDesignerFolder>Properties</AppDesignerFolder>")
-                .Append(k_WindowsNewline);
-            builder
-                .Append(@"    <AssemblyName>")
-                .Append(assemblyName)
-                .Append("</AssemblyName>")
-                .Append(k_WindowsNewline);
-            builder
-                .Append(@"    <TargetFrameworkVersion>")
-                .Append(k_TargetFrameworkVersion)
-                .Append("</TargetFrameworkVersion>")
-                .Append(k_WindowsNewline);
-            builder.Append(@"    <FileAlignment>512</FileAlignment>").Append(k_WindowsNewline);
-            builder
-                .Append(@"    <BaseDirectory>")
-                .Append(k_BaseDirectory)
-                .Append("</BaseDirectory>")
-                .Append(k_WindowsNewline);
-            builder.Append(@"  </PropertyGroup>").Append(k_WindowsNewline);
-            builder
-                .Append(
-                    @"  <PropertyGroup Condition="" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' "">"
-                )
-                .Append(k_WindowsNewline);
-            builder.Append(@"    <DebugSymbols>true</DebugSymbols>").Append(k_WindowsNewline);
-            builder.Append(@"    <DebugType>full</DebugType>").Append(k_WindowsNewline);
-            builder.Append(@"    <Optimize>false</Optimize>").Append(k_WindowsNewline);
-            builder
-                .Append(@"    <OutputPath>Temp\bin\Debug\</OutputPath>")
-                .Append(k_WindowsNewline);
-            builder
-                .Append(@"    <DefineConstants>")
-                .Append(defines)
-                .Append("</DefineConstants>")
-                .Append(k_WindowsNewline);
-            builder.Append(@"    <ErrorReport>prompt</ErrorReport>").Append(k_WindowsNewline);
-            builder.Append(@"    <WarningLevel>4</WarningLevel>").Append(k_WindowsNewline);
-            builder.Append(@"    <NoWarn>0169</NoWarn>").Append(k_WindowsNewline);
-            builder
-                .Append(@"    <AllowUnsafeBlocks>")
-                .Append(allowUnsafe)
-                .Append("</AllowUnsafeBlocks>")
-                .Append(k_WindowsNewline);
-            builder.Append(@"  </PropertyGroup>").Append(k_WindowsNewline);
-            builder.Append(@"  <PropertyGroup>").Append(k_WindowsNewline);
-            builder.Append(@"    <NoConfig>true</NoConfig>").Append(k_WindowsNewline);
-            builder.Append(@"    <NoStdLib>true</NoStdLib>").Append(k_WindowsNewline);
-            builder
-                .Append(
-                    @"    <AddAdditionalExplicitAssemblyReferences>false</AddAdditionalExplicitAssemblyReferences>"
-                )
-                .Append(k_WindowsNewline);
-            builder
-                .Append(
-                    @"    <ImplicitlyExpandNETStandardFacades>false</ImplicitlyExpandNETStandardFacades>"
-                )
-                .Append(k_WindowsNewline);
-            builder
-                .Append(
-                    @"    <ImplicitlyExpandDesignTimeFacades>false</ImplicitlyExpandDesignTimeFacades>"
-                )
-                .Append(k_WindowsNewline);
-            builder.Append(rulesetBlock);
-            builder.Append(@"  </PropertyGroup>").Append(k_WindowsNewline);
-            builder.Append(analyzerBlock);
-            builder.Append(@"  <ItemGroup>").Append(k_WindowsNewline);
->>>>>>> 8298f45 (Better Support & Formatting)
+                _ => throw new ArgumentOutOfRangeException()
+            };
         }
 
         void SyncSolution(IEnumerable<Assembly> assemblies)
@@ -1241,8 +935,8 @@ namespace VSCodeEditor
 
         string SolutionText(IEnumerable<Assembly> assemblies)
         {
-            var fileversion = "11.00";
-            var vsversion = "2010";
+            var fileVersion = "11.00";
+            var vsVersion = "2010";
 
             var relevantAssemblies = RelevantAssembliesForMode(assemblies);
             string projectEntries = GetProjectEntries(relevantAssemblies);
@@ -1254,8 +948,8 @@ namespace VSCodeEditor
             );
             return string.Format(
                 GetSolutionText(),
-                fileversion,
-                vsversion,
+                fileVersion,
+                vsVersion,
                 projectEntries,
                 projectConfigurations
             );
@@ -1267,7 +961,7 @@ namespace VSCodeEditor
         }
 
         /// <summary>
-        /// Get a Project("{guid}") = "MyProject", "MyProject.csproj", "{projectguid}"
+        /// Get a Project("{guid}") = "MyProject", "MyProject.csproj", "{projectGuid}"
         /// entry for each relevant language
         /// </summary>
         string GetProjectEntries(IEnumerable<Assembly> assemblies)
@@ -1312,14 +1006,6 @@ namespace VSCodeEditor
                 m_ProjectName,
                 GetExtensionOfSourceFiles(assembly.sourceFiles)
             );
-<<<<<<< HEAD
-=======
-        }
-
-        static string ProjectFooter()
-        {
-            return GetProjectFooterTemplate();
->>>>>>> 8298f45 (Better Support & Formatting)
         }
 
         static string GetProjectExtension()
@@ -1346,6 +1032,52 @@ namespace VSCodeEditor
 
             if (!m_FileIOProvider.Exists(workspaceFile))
                 m_FileIOProvider.WriteAllText(workspaceFile, k_WorkspaceJson);
+        }
+
+        void WriteOmniSharpConfigFile()
+        {
+            var omniSharpConfig = Path.Combine(ProjectDirectory, "omnisharp.json");
+
+            if (!m_FileIOProvider.Exists(omniSharpConfig))
+                m_FileIOProvider.WriteAllText(omniSharpConfig, k_OmniSharpJson);
+        }
+
+        void WriteEditorConfigFile()
+        {
+            var editorConfig = Path.Combine(ProjectDirectory, ".editorconfig");
+
+            if (!m_FileIOProvider.Exists(editorConfig))
+                m_FileIOProvider.WriteAllText(editorConfig, k_EditorConfig);
+        }
+
+        void WriteUnityAnalyzersFile()
+        {
+            var nugetDirectory = Path.Combine(ProjectDirectory, "NuGet");
+
+            if (!m_FileIOProvider.Exists(nugetDirectory))
+                m_FileIOProvider.CreateDirectory(nugetDirectory);
+
+            var unityAnalyzers = Path.Combine(nugetDirectory, "Microsoft.Unity.Analyzers.dll");
+
+            /*
+                This is the path to the roslyn analyzers dll in the Unity package, and is the only way
+                I could find to get the analyzers dll into the project without extra user setup
+            */
+            var unityRoslynKoalafiedDLL = Path.Combine(
+                ProjectDirectory,
+                "Packages",
+                "com.tsk.ide.vscode",
+                "Editor",
+                "NuGet",
+                "Microsoft.Unity.Analyzers.dll.koala"
+            );
+
+            /*
+                This file will be overwritten if it already exists in case the version of the analyzers changes
+                I could use a txt file to store the version of the analyzers, and only overwrite if the version changes
+                but I don't think it's worth the effort
+            */
+            m_FileIOProvider.Copy(unityRoslynKoalafiedDLL, unityAnalyzers, true);
         }
     }
 
