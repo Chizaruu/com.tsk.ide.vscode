@@ -111,8 +111,7 @@ namespace VSCodeEditor
         ""organizeImportsOnFormat"": true,
         ""threadsToUseForAnalyzers"": true,
         ""useModernNet"": true,
-        ""documentAnalysisTimeoutMs"": 600000,
-        ""LocationPaths"": [""./NuGet""]
+        ""documentAnalysisTimeoutMs"": 600000
     }
 }";
 
@@ -450,11 +449,12 @@ trim_trailing_whitespace = true
                 SyncProject(assembly, allAssetProjectParts, responseFileData);
             }
 
+            GenerateNugetJsonSourceFiles();
+
             WriteVSCodeSettingsFiles();
             WriteWorkspaceFile();
             WriteOmniSharpConfigFile();
             WriteEditorConfigFile();
-            WriteUnityAnalyzersFile();
         }
 
         List<ResponseFileData> ParseResponseFileData(Assembly assembly)
@@ -555,6 +555,7 @@ trim_trailing_whitespace = true
                 ProjectText(assembly, allAssetsProjectParts, responseFilesData)
             );
         }
+
 
         void SyncProjectFileIfNotChanged(string path, string newContents)
         {
@@ -696,6 +697,18 @@ trim_trailing_whitespace = true
 
                 project.Add(assemblyRefItemGroup);
             }
+
+            // Add Microsoft.Unity.Analyzers package reference with version being the latest available
+            var unityAnalyzersRefItemGroup = new XElement("ItemGroup");
+            var unityAnalyzersRefElement = new XElement(
+                "PackageReference",
+                new XAttribute("Include", "Microsoft.Unity.Analyzers"),
+                new XAttribute("Version", "*")
+            );
+
+            unityAnalyzersRefItemGroup.Add(unityAnalyzersRefElement);
+
+            project.Add(unityAnalyzersRefItemGroup);
 
             return document.ToString();
         }
@@ -936,7 +949,7 @@ trim_trailing_whitespace = true
         string SolutionText(IEnumerable<Assembly> assemblies)
         {
             var fileVersion = "11.00";
-            var vsVersion = "2010";
+            var vsVersion = "2020";
 
             var relevantAssemblies = RelevantAssembliesForMode(assemblies);
             string projectEntries = GetProjectEntries(relevantAssemblies);
@@ -1013,6 +1026,46 @@ trim_trailing_whitespace = true
             return ".csproj";
         }
 
+
+        void GenerateNugetJsonSourceFiles()
+        {
+            // Generate the nuget.json file for each csproj by getting each csproj as a string and then calling dotnet restore
+
+            var csprojFiles = Directory.GetFiles(ProjectDirectory, "*.csproj", SearchOption.AllDirectories);
+
+            foreach (var csprojFile in csprojFiles)
+            {
+                 // Create a new process to run the dotnet restore command
+                System.Diagnostics.Process process = new();
+
+                // Set the process start info
+                System.Diagnostics.ProcessStartInfo processStartInfo = new()
+                {
+                    FileName = "dotnet", // The executable for dotnet
+                    Arguments = $"restore \"{csprojFile}\"", // The arguments to pass to the executable
+                    RedirectStandardOutput = true, // Redirect standard output for capturing output
+                    UseShellExecute = false, // Do not use the shell to execute the process
+                    CreateNoWindow = true // Do not create a window for the process
+                };
+                process.StartInfo = processStartInfo;
+
+                // Start the process
+                process.Start();
+
+                // Capture and read the output
+                //string output = process.StandardOutput.ReadToEnd();
+
+                // Wait for the process to exit
+                process.WaitForExit();
+
+                // Close the process
+                process.Close();
+
+                // Process the output as needed
+                //Debug.Log(output); // Print the output to the console, or use it for further processing
+            }
+        }
+
         void WriteVSCodeSettingsFiles()
         {
             var vsCodeDirectory = Path.Combine(ProjectDirectory, ".vscode");
@@ -1048,36 +1101,6 @@ trim_trailing_whitespace = true
 
             if (!m_FileIOProvider.Exists(editorConfig))
                 m_FileIOProvider.WriteAllText(editorConfig, k_EditorConfig);
-        }
-
-        void WriteUnityAnalyzersFile()
-        {
-            var nugetDirectory = Path.Combine(ProjectDirectory, "NuGet");
-
-            if (!m_FileIOProvider.Exists(nugetDirectory))
-                m_FileIOProvider.CreateDirectory(nugetDirectory);
-
-            var unityAnalyzers = Path.Combine(nugetDirectory, "Microsoft.Unity.Analyzers.dll");
-
-            /*
-                This is the path to the roslyn analyzers dll in the Unity package, and is the only way
-                I could find to get the analyzers dll into the project without extra user setup
-            */
-            var unityRoslynKoalafiedDLL = Path.Combine(
-                ProjectDirectory,
-                "Packages",
-                "com.tsk.ide.vscode",
-                "Editor",
-                "NuGet",
-                "Microsoft.Unity.Analyzers.dll.koala"
-            );
-
-            /*
-                This file will be overwritten if it already exists in case the version of the analyzers changes
-                I could use a txt file to store the version of the analyzers, and only overwrite if the version changes
-                but I don't think it's worth the effort
-            */
-            m_FileIOProvider.Copy(unityRoslynKoalafiedDLL, unityAnalyzers, true);
         }
     }
 

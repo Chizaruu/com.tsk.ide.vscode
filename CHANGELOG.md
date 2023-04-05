@@ -1,5 +1,11 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.3.2] - 2023-04-05
+
+- Removed koalafied Microsoft.Unity.Analyzers dll
+- Removed LocationPaths option from omnisharp.json
+- Added support for Nuget package Microsoft.Unity.Analyzers (See ProjectGeneration.cs for more info)
+
 ## [1.3.1] - 2023-04-01
 
 - Moved .omnisharp, .editorconfig, and analyzer generation to ProjectGeneration.cs to be in line with the rest of the project
