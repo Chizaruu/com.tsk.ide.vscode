@@ -8,13 +8,19 @@ using UnityEngine;
 
 namespace VSCodeEditor
 {
+    [Flags]
+    public enum ArgumentFlag
+    {
+        Argument = 1,
+    }
+
     [InitializeOnLoad]
     public class VSCodeScriptEditor : IExternalCodeEditor
     {
         const string vscode_argument = "vscode_arguments";
         const string vscode_extension = "vscode_userExtensions";
         static readonly GUIContent k_ResetArguments = EditorGUIUtility.TrTextContent(
-            "Reset argument"
+            "Reset arguments"
         );
         string m_Arguments;
         readonly IDiscovery m_Discoverability;
@@ -38,6 +44,9 @@ namespace VSCodeEditor
         static string DefaultApp => EditorPrefs.GetString("kScriptsDefaultApp");
 
         static string DefaultArgument { get; } =
+            "\"$(ProjectPath)\" -g \"$(File)\":$(Line):$(Column)";
+
+        static string WorkplaceDefaultArgument { get; } =
             "\"$(ProjectPath)/$(ProjectName).code-workspace\" -g \"$(File)\":$(Line):$(Column)";
 
         string Arguments
@@ -124,10 +133,11 @@ namespace VSCodeEditor
         public void OnGUI()
         {
             Arguments = EditorGUILayout.TextField("External Script Editor Args", Arguments);
-            if (GUILayout.Button(k_ResetArguments, GUILayout.Width(120)))
-            {
-                Arguments = DefaultArgument;
-            }
+            EditorGUILayout.LabelField("Reset arguments to default:");
+            EditorGUI.indentLevel++;
+            ArgumentButton(ArgumentFlag.Argument, "Use Code-Workspace", "");
+            ArgumentsReset();
+            EditorGUI.indentLevel--;
 
             EditorGUILayout.LabelField("Generate .csproj files for:");
             EditorGUI.indentLevel++;
@@ -147,6 +157,28 @@ namespace VSCodeEditor
                 new GUIContent("Extensions handled: "),
                 HandledExtensionsString
             );
+        }
+
+        // Reset the arguments based on ArgumentFlag
+        void ArgumentsReset()
+        {
+            var rect = EditorGUI.IndentedRect(
+                EditorGUILayout.GetControlRect(new GUILayoutOption[] { })
+            );
+            rect.width = 252;
+            if (GUI.Button(rect, k_ResetArguments))
+            {
+                if (m_ProjectGeneration.AssemblyNameProvider.ArgumentFlag.HasFlag(
+                    ArgumentFlag.Argument
+                ))
+                {
+                    Arguments = WorkplaceDefaultArgument;
+                }
+                else
+                {
+                    Arguments = DefaultArgument;
+                }
+            }
         }
 
         void RegenerateProjectFiles()
@@ -170,6 +202,18 @@ namespace VSCodeEditor
             if (newValue != prevValue)
             {
                 m_ProjectGeneration.AssemblyNameProvider.ToggleProjectGeneration(preference);
+            }
+        }
+
+        void ArgumentButton(ArgumentFlag preference, string guiMessage, string toolTip)
+        {
+            var prevValue = m_ProjectGeneration.AssemblyNameProvider.ArgumentFlag.HasFlag(
+                preference
+            );
+            var newValue = EditorGUILayout.Toggle(new GUIContent(guiMessage, toolTip), prevValue);
+            if (newValue != prevValue)
+            {
+                m_ProjectGeneration.AssemblyNameProvider.ToggleArgument(preference);
             }
         }
 
