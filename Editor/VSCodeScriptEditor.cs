@@ -267,7 +267,7 @@ namespace VSCodeEditor
                 $"{m_ProjectGeneration.ProjectDirectory}/{Path.GetFileName(m_ProjectGeneration.ProjectDirectory)}.code-workspace";
 
             string arguments;
-            if (Arguments != DefaultArgument)
+            if (Arguments != DefaultArgument && Arguments != WorkplaceDefaultArgument)
             {
                 arguments =
                     m_ProjectGeneration.ProjectDirectory != path
@@ -276,7 +276,11 @@ namespace VSCodeEditor
             }
             else
             {
-                arguments = $@"""{workspacePath}""";
+                arguments = m_ProjectGeneration.AssemblyNameProvider.ArgumentFlag.HasFlag(
+                    ArgumentFlag.Argument
+                )
+                    ? $@"""{workspacePath}"""
+                    : $@"""{m_ProjectGeneration.ProjectDirectory}""";
                 if (m_ProjectGeneration.ProjectDirectory != path && path.Length != 0)
                 {
                     arguments += $@" -g ""{path}"":{line}:{column}";
