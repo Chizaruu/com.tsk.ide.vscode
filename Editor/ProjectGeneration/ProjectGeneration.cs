@@ -107,6 +107,7 @@ namespace VSCodeEditor
     ""RoslynExtensionsOptions"": {
         ""enableRoslynAnalyzers"": true,
         ""enableEditorConfigSupport"": true,
+        ""analyzeOpenDocumentsOnly"": true,
         ""sdkIncludePrereleases"": false,
         ""organizeImportsOnFormat"": true,
         ""threadsToUseForAnalyzers"": true,
