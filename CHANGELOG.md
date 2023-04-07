@@ -3,7 +3,7 @@
 ## [1.3.4] - 2023-04-07
 
 - Minimum Unity version is now 2021.3
-- Added support for NetStandard Editor Assemblies Compatibility Level
+- Added support for 2021/2022 NetStandard Editor Assemblies Compatibility Level (Not really, it's just a workaround until users start using 2023)
 - Added toggle for preferred default arguments for opening VSCode (You can choose between user or workspace)
 - Restructured the repository to be more in line with Unity's architecture (See <https://github.com/Unity-Technologies/com.unity.cinemachine> for more info)
 
