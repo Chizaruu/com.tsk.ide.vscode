@@ -672,7 +672,7 @@ trim_trailing_whitespace = true
                     string fullReference = Path.IsPathRooted(reference)
                         ? reference
                         : Path.Combine(ProjectDirectory, reference);
-                    AppendReference(fullReference, refItemGroup);
+                    AppendReference(fullReference, refItemGroup, targetFrameWork.Value);
                 }
 
                 project.Add(refItemGroup);
@@ -713,7 +713,7 @@ trim_trailing_whitespace = true
             return document.ToString();
         }
 
-        static void AppendReference(string fullReference, XElement projectBuilder)
+        static void AppendReference(string fullReference, XElement projectBuilder, string targetFrameWork)
         {
             var escapedFullPath = SecurityElement.Escape(fullReference);
             escapedFullPath = escapedFullPath.NormalizePath();
@@ -723,6 +723,16 @@ trim_trailing_whitespace = true
                 new XAttribute("Include", Path.GetFileNameWithoutExtension(escapedFullPath))
             );
 
+            #if !UNITY_2023_1_OR_NEWER
+
+            if(targetFrameWork.Contains("netstandard"))
+            {
+                var netstandardVersion = targetFrameWork == "netstandard2.1" ? "2.1.0" : "2.0.0";
+
+                escapedFullPath = HandleEditorReference(escapedFullPath, netstandardVersion);
+            } 
+            #endif
+
             var hintPath = new XElement("HintPath")
             {
                 Value = escapedFullPath
@@ -730,6 +740,44 @@ trim_trailing_whitespace = true
             reference.Add(hintPath);
             projectBuilder.Add(reference);
         }
+
+#if !UNITY_2023_1_OR_NEWER
+        /*
+            This is a hack to get around the fact that the editor references a bunch of facades that are not in the netstandard2.0 or 2.1
+            We need to replace the references with the ones that are in the netstandard2.0 or 2.1 compat folder
+        */
+        static string HandleEditorReference(string referencePath, string netstandardVersion)
+        {
+            var facadesPath = "UnityReferenceAssemblies\\unity-4.8-api\\Facades\\";
+            var referenceName = Path.GetFileNameWithoutExtension(referencePath);
+
+            return referenceName switch
+            {
+            "Microsoft.Win32.Primitives" or "System.AppContext" or "System.Collections.Concurrent" or
+            "System.Collections.NonGeneric" or "System.Collections.Specialized" or "System.ComponentModel" or
+            "System.ComponentModel.EventBasedAsync" or "System.Diagnostics.Contracts" or "System.Diagnostics.Debug" or
+            "System.Diagnostics.Tools" or "System.Diagnostics.Tracing" or "System.Globalization" or
+            "System.Globalization.Calendars" or "System.IO" or "System.IO.Compression" or
+            "System.IO.Compression.ZipFile" or "System.IO.FileSystem" or "System.IO.FileSystem.Primitives" or
+            "System.Linq" or "System.Linq.Expressions" or "System.Net.Http" or
+            "System.Net.Primitives" or "System.Net.Sockets" or "System.ObjectModel" or
+            "System.Reflection" or "System.Reflection.Extensions" or "System.Reflection.Primitives" or
+            "System.Resources.ResourceManager" or "System.Runtime" or "System.Runtime.Extensions" or
+            "System.Runtime.Handles" or "System.Runtime.InteropServices" or "System.Runtime.InteropServices.RuntimeInformation" or
+            "System.Runtime.Numerics" or "System.Security.Cryptography.Algorithms" or "System.Security.Cryptography.Encoding" or
+            "System.Security.Cryptography.Primitives" or "System.Security.Cryptography.X509Certificates" or "System.Text.Encoding" or
+            "System.Text.Encoding.Extensions" or "System.Text.RegularExpressions" or "System.Threading" or
+            "System.Threading.Tasks" or "System.Threading.Tasks.Parallel" or "System.Threading.Thread" or
+            "System.Threading.ThreadPool" or "System.Threading.Timer" or "System.ValueTuple" or
+            "System.Xml.ReaderWriter" or "System.Xml.XDocument" or "System.Xml.XmlDocument" or
+            "System.Xml.XmlSerializer" or "System.Xml.XPath" or "System.Xml.XPath.XDocument" =>
+            referencePath.Replace(facadesPath, $"NetStandard\\compat\\{netstandardVersion}\\shims\\netstandard\\"),
+            "System.Runtime.InteropServices.WindowsRuntime" => referencePath.Replace(facadesPath, $"NetStandard\\Extensions\\2.0.0\\"),
+            "netstandard" => referencePath.Replace(facadesPath, $"NetStandard\\{netstandardVersion}\\"),
+            _ => referencePath.Replace(facadesPath, $"NetStandard\\compat\\{netstandardVersion}\\shims\\"),
+            };
+        }
+#endif
 
         private void AddCommonProperties(
             Assembly assembly,

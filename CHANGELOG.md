@@ -1,5 +1,12 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.3.4] - 2023-04-07
+
+- Minimum Unity version is now 2021.3
+- Added support for NetStandard Editor Assemblies Compatibility Level
+- Added toggle for preferred default arguments for opening VSCode (You can choose between user or workspace)
+- Restructured the repository to be more in line with Unity's architecture (See <https://github.com/Unity-Technologies/com.unity.cinemachine> for more info)
+
 ## [1.3.2] - 2023-04-05
 
 - Removed koalafied Microsoft.Unity.Analyzers dll
