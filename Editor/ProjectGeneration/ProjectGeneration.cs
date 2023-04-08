@@ -1058,40 +1058,34 @@ trim_trailing_whitespace = true
         void GenerateNugetJsonSourceFiles()
         {
             // Generate the nuget.json file for each csproj by getting each csproj as a string and then calling dotnet restore
-
             var csprojFiles = Directory.GetFiles(ProjectDirectory, "*.csproj", SearchOption.AllDirectories);
 
             foreach (var csprojFile in csprojFiles)
             {
-                 // Create a new process to run the dotnet restore command
-                System.Diagnostics.Process process = new();
-
-                // Set the process start info
-                System.Diagnostics.ProcessStartInfo processStartInfo = new()
-                {
-                    FileName = "dotnet", // The executable for dotnet
-                    Arguments = $"restore \"{csprojFile}\"", // The arguments to pass to the executable
-                    RedirectStandardOutput = true, // Redirect standard output for capturing output
-                    UseShellExecute = false, // Do not use the shell to execute the process
-                    CreateNoWindow = true // Do not create a window for the process
-                };
-                process.StartInfo = processStartInfo;
-
-                // Start the process
-                process.Start();
-
-                // Capture and read the output
-                //string output = process.StandardOutput.ReadToEnd();
-
-                // Wait for the process to exit
-                process.WaitForExit();
-
-                // Close the process
-                process.Close();
-
-                // Process the output as needed
-                //Debug.Log(output); // Print the output to the console, or use it for further processing
+                //Run dotnet restore on the csproj file to generate the nuget.json file
+                RunDotnetProcess($"restore \"{csprojFile}\"");
             }
+        }
+
+        void RunDotnetProcess(string arguments)
+        {
+            System.Diagnostics.Process process = new();
+
+            System.Diagnostics.ProcessStartInfo processStartInfo = new()
+            {
+                FileName = "dotnet", 
+                Arguments = arguments, 
+                RedirectStandardOutput = true, 
+                UseShellExecute = false, 
+                CreateNoWindow = true
+            };
+            process.StartInfo = processStartInfo;
+
+            process.Start();
+
+            process.WaitForExit();
+            
+            process.Close();
         }
 
         void WriteVSCodeSettingsFiles()
