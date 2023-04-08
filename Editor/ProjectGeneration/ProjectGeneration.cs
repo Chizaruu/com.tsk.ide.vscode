@@ -177,9 +177,7 @@ trim_trailing_whitespace = true
                     | ProjectGenerationFlag.Embedded
                     | ProjectGenerationFlag.Git
                     | ProjectGenerationFlag.Local
-#if UNITY_2019_3_OR_NEWER
                     | ProjectGenerationFlag.LocalTarBall
-#endif
                     | ProjectGenerationFlag.PlayerAssemblies
                     | ProjectGenerationFlag.Registry
                     | ProjectGenerationFlag.Unknown
@@ -875,11 +873,7 @@ trim_trailing_whitespace = true
             var langVersion = langVersionList.FirstOrDefault();
             if (!string.IsNullOrWhiteSpace(langVersion))
                 return langVersion;
-#if UNITY_2020_2_OR_NEWER
             return assembly.compilerOptions.LanguageVersion;
-#else
-            return k_TargetLanguageVersion;
-#endif
         }
 
         private static string[] GenerateRoslynAnalyzerRulesetPath(
@@ -887,19 +881,12 @@ trim_trailing_whitespace = true
             ILookup<string, string> otherResponseFilesData
         )
         {
-#if UNITY_2020_2_OR_NEWER
             return otherResponseFilesData["ruleset"]
                 .Append(assembly.compilerOptions.RoslynAnalyzerRulesetPath)
                 .Where(a => !string.IsNullOrEmpty(a))
                 .Distinct()
                 .Select(x => MakeAbsolutePath(x).NormalizePath())
                 .ToArray();
-#else
-            return otherResponseFilesData["ruleset"]
-                .Distinct()
-                .Select(x => MakeAbsolutePath(x).NormalizePath())
-                .ToArray();
-#endif
         }
 
         private static string GenerateAnalyzerRuleSet(string[] paths)
@@ -975,17 +962,9 @@ trim_trailing_whitespace = true
             return netSettings switch
             {
                 ApiCompatibilityLevel.NET_2_0 or ApiCompatibilityLevel.NET_2_0_Subset or
-#if !UNITY_2021_1_OR_NEWER
-                ApiCompatibilityLevel.NET_4_6 or
-#endif
                 ApiCompatibilityLevel.NET_Web or ApiCompatibilityLevel.NET_Micro => k_TargetFrameworkVersion,
-#if !UNITY_2021_1_OR_NEWER
-                ApiCompatibilityLevel.NET_Standard_2_0 => "netstandard2.0",
-#endif
-#if UNITY_2021_1_OR_NEWER
                 ApiCompatibilityLevel.NET_Standard => "netstandard2.1",
                 ApiCompatibilityLevel.NET_Unity_4_8 => k_TargetFrameworkVersion,
-#endif
                 _ => throw new ArgumentOutOfRangeException()
             };
         }

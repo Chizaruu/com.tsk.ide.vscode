@@ -146,9 +146,7 @@ namespace VSCodeEditor
             SettingsButton(ProjectGenerationFlag.Registry, "Registry packages", "");
             SettingsButton(ProjectGenerationFlag.Git, "Git packages", "");
             SettingsButton(ProjectGenerationFlag.BuiltIn, "Built-in packages", "");
-#if UNITY_2019_3_OR_NEWER
             SettingsButton(ProjectGenerationFlag.LocalTarBall, "Local tarball", "");
-#endif
             SettingsButton(ProjectGenerationFlag.Unknown, "Packages from unknown sources", "");
             RegenerateProjectFiles();
             EditorGUI.indentLevel--;

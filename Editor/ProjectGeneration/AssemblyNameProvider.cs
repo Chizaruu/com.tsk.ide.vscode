@@ -154,30 +154,18 @@ namespace VSCodeEditor
                 return false;
             }
             var packageSource = packageInfo.source;
-            switch (packageSource)
+            
+            return packageSource switch
             {
-                case PackageSource.Embedded:
-                    return !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Embedded);
-                case PackageSource.Registry:
-                    return !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Registry);
-                case PackageSource.BuiltIn:
-                    return !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.BuiltIn);
-                case PackageSource.Unknown:
-                    return !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Unknown);
-                case PackageSource.Local:
-                    return !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Local);
-                case PackageSource.Git:
-                    return !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Git);
-#if UNITY_2019_3_OR_NEWER
-                case PackageSource.LocalTarball:
-                    return !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.LocalTarBall);
-
-#endif
-                default:
-                    break;
-            }
-
-            return false;
+                PackageSource.Embedded => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Embedded),
+                PackageSource.Registry => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Registry),
+                PackageSource.BuiltIn => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.BuiltIn),
+                PackageSource.Unknown => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Unknown),
+                PackageSource.Local => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Local),
+                PackageSource.Git => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Git),
+                PackageSource.LocalTarball => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.LocalTarBall),
+                _ => false
+            };
         }
 
         public void ToggleArgument(ArgumentFlag preference)
