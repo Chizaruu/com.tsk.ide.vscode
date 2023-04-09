@@ -11,6 +11,7 @@ namespace VSCodeEditor
     [Flags]
     public enum ArgumentFlag
     {
+        None = 0,
         Argument = 1,
     }
 

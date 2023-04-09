@@ -36,14 +36,14 @@ namespace VSCodeEditor
             };
 #elif UNITY_EDITOR_WIN
             {
-                GetProgramFiles() + @"/Microsoft VS Code/bin/code.cmd",
-                GetProgramFiles() + @"/Microsoft VS Code/Code.exe",
-                GetProgramFiles() + @"/Microsoft VS Code Insiders/bin/code-insiders.cmd",
-                GetProgramFiles() + @"/Microsoft VS Code Insiders/Code.exe",
-                GetLocalAppData() + @"/Programs/Microsoft VS Code/bin/code.cmd",
-                GetLocalAppData() + @"/Programs/Microsoft VS Code/Code.exe",
-                GetLocalAppData() + @"/Programs/Microsoft VS Code Insiders/bin/code-insiders.cmd",
-                GetLocalAppData() + @"/Programs/Microsoft VS Code Insiders/Code.exe",
+                GetProgramFiles() + "/Microsoft VS Code/bin/code.cmd",
+                GetProgramFiles() + "/Microsoft VS Code/Code.exe",
+                GetProgramFiles() + "/Microsoft VS Code Insiders/bin/code-insiders.cmd",
+                GetProgramFiles() + "/Microsoft VS Code Insiders/Code.exe",
+                GetLocalAppData() + "/Programs/Microsoft VS Code/bin/code.cmd",
+                GetLocalAppData() + "/Programs/Microsoft VS Code/Code.exe",
+                GetLocalAppData() + "/Programs/Microsoft VS Code Insiders/bin/code-insiders.cmd",
+                GetLocalAppData() + "/Programs/Microsoft VS Code Insiders/Code.exe",
             };
 #else
             {
@@ -55,18 +55,17 @@ namespace VSCodeEditor
                 "/snap/bin/code"
             };
 #endif
-            var existingPaths = possiblePaths.Where(VSCodeExists).ToList();
+            List<string> existingPaths = possiblePaths.Where(VSCodeExists).ToList();
             if (!existingPaths.Any())
             {
                 return;
             }
 
-            var lcp = GetLongestCommonPrefix(existingPaths);
+            string lcp = GetLongestCommonPrefix(existingPaths);
             switch (existingPaths.Count)
             {
                 case 1:
-                {
-                    var path = existingPaths.First();
+                    string path = existingPaths[0];
                     m_Installations = new List<CodeEditor.Installation>
                     {
                         new CodeEditor.Installation
@@ -78,30 +77,25 @@ namespace VSCodeEditor
                         }
                     };
                     break;
-                }
+
                 case 2
                     when existingPaths.Any(
                         path =>
                             !(path[lcp.Length..].Contains("/") || path[lcp.Length..].Contains("\\"))
                     ):
-                {
                     goto case 1;
-                }
+
                 default:
-                {
-                    m_Installations = existingPaths
-                        .Select(
-                            path =>
-                                new CodeEditor.Installation
-                                {
-                                    Name = $"Visual Studio Code Insiders ({path[lcp.Length..]})",
-                                    Path = path
-                                }
-                        )
-                        .ToList();
+                    m_Installations = existingPaths.ConvertAll(
+                        path =>
+                            new CodeEditor.Installation
+                            {
+                                Name = $"Visual Studio Code Insiders ({path[lcp.Length..]})",
+                                Path = path
+                            }
+                    );
 
                     break;
-                }
             }
         }
 
@@ -119,14 +113,16 @@ namespace VSCodeEditor
 
         static string GetLongestCommonPrefix(List<string> paths)
         {
-            var baseLength = paths.First().Length;
-            for (var pathIndex = 1; pathIndex < paths.Count; pathIndex++)
+            int baseLength = paths[0].Length;
+            for (int pathIndex = 1; pathIndex < paths.Count; pathIndex++)
             {
                 baseLength = Math.Min(baseLength, paths[pathIndex].Length);
-                for (var i = 0; i < baseLength; i++)
+                for (int i = 0; i < baseLength; i++)
                 {
                     if (paths[pathIndex][i] == paths[0][i])
+                    {
                         continue;
+                    }
 
                     baseLength = i;
                     break;

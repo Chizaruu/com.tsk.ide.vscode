@@ -6,7 +6,7 @@ namespace VSCodeEditor
         string SolutionGuid(string projectName, string extension);
     }
 
-    class GUIDProvider : IGUIDGenerator
+    internal class GUIDProvider : IGUIDGenerator
     {
         public string ProjectGuid(string projectName, string assemblyName)
         {

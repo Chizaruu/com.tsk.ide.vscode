@@ -29,15 +29,15 @@ namespace VSCodeEditor
     {
         enum ScriptingLanguage
         {
-            None,
-            CSharp
+            None = 0,
+            CSharp = 1
         }
 
         const string k_WindowsNewline = "\r\n";
 
         const string k_SettingsJson =
-                                 /*lang=json,strict*/
-                                 @"{
+            /*lang=json,strict*/
+            @"{
     ""files.exclude"":
     {
         ""**/.DS_Store"":true,
@@ -94,6 +94,7 @@ namespace VSCodeEditor
 }";
 
         const string k_WorkspaceJson =
+            /*lang=json,strict*/
             @"{
 	""folders"": [
 		{
@@ -103,6 +104,7 @@ namespace VSCodeEditor
 }";
 
         const string k_OmniSharpJson =
+            /*lang=json,strict*/
             @"{
     ""RoslynExtensionsOptions"": {
         ""enableRoslynAnalyzers"": true,
@@ -129,7 +131,6 @@ indent_size = 4
 trim_trailing_whitespace = true
 ";
 
-
         /// <summary>
         /// Map source extensions to ScriptingLanguages
         /// </summary>
@@ -151,21 +152,20 @@ trim_trailing_whitespace = true
         readonly string m_SolutionProjectEntryTemplate = string.Join(
                 "\r\n",
                 @"Project(""{{{0}}}"") = ""{1}"", ""{2}"", ""{{{3}}}""",
-                @"EndProject"
+                "EndProject"
             )
             .Replace("    ", "\t");
 
         readonly string m_SolutionProjectConfigurationTemplate = string.Join(
                 "\r\n",
-                @"        {{{0}}}.Debug|Any CPU.ActiveCfg = Debug|Any CPU",
-                @"        {{{0}}}.Debug|Any CPU.Build.0 = Debug|Any CPU"
+                "        {{{0}}}.Debug|Any CPU.ActiveCfg = Debug|Any CPU",
+                "        {{{0}}}.Debug|Any CPU.Build.0 = Debug|Any CPU"
             )
             .Replace("    ", "\t");
 
         static readonly string[] k_ReimportSyncExtensions = { ".dll", ".asmdef" };
 
         string[] m_ProjectSupportedExtensions = Array.Empty<string>();
-        const string k_TargetLanguageVersion = "latest";
 
         public string ProjectDirectory { get; }
         IAssemblyNameProvider IGenerator.AssemblyNameProvider => m_AssemblyNameProvider;
@@ -189,15 +189,7 @@ trim_trailing_whitespace = true
         readonly IFileIO m_FileIOProvider;
         readonly IGUIDGenerator m_GUIDProvider;
 
-        const string k_ToolsVersion = "4.0";
-        const string k_ProductVersion = "10.0.20506";
-        const string k_BaseDirectory = ".";
-
-#if UNITY_2022_1_OR_NEWER
         const string k_TargetFrameworkVersion = "net48";
-#else
-        const string k_TargetFrameworkVersion = "net471";
-#endif
 
         public ProjectGeneration(string tempDirectory)
             : this(
@@ -205,8 +197,7 @@ trim_trailing_whitespace = true
                 new AssemblyNameProvider(),
                 new FileIOProvider(),
                 new GUIDProvider()
-            )
-        { }
+            ) { }
 
         public ProjectGeneration(
             string tempDirectory,
@@ -308,7 +299,7 @@ trim_trailing_whitespace = true
         {
             foreach (var method in GetPostProcessorCallbacks(nameof(OnGeneratedCSProjectFiles)))
             {
-                method.Invoke(null, Array.Empty<object>());
+                _ = method.Invoke(null, Array.Empty<object>());
             }
         }
 
@@ -371,12 +362,9 @@ trim_trailing_whitespace = true
         bool ShouldFileBePartOfSolution(string file)
         {
             // Exclude files coming from packages except if they are internalized.
-            if (m_AssemblyNameProvider.IsInternalizedPackagePath(file))
-            {
-                return false;
-            }
-
-            return HasValidExtension(file);
+            return m_AssemblyNameProvider.IsInternalizedPackagePath(file)
+                ? false
+                : HasValidExtension(file);
         }
 
         bool HasValidExtension(string file)
@@ -491,8 +479,7 @@ trim_trailing_whitespace = true
 
         Dictionary<string, List<XElement>> GenerateAllAssetProjectParts()
         {
-            Dictionary<string, List<XElement>> stringBuilders =
-                new();
+            Dictionary<string, List<XElement>> stringBuilders = new();
             foreach (string asset in m_AssemblyNameProvider.GetAllAssetPaths())
             {
                 // Exclude files coming from packages except if they are internalized.
@@ -554,7 +541,6 @@ trim_trailing_whitespace = true
                 ProjectText(assembly, allAssetsProjectParts, responseFilesData)
             );
         }
-
 
         void SyncProjectFileIfNotChanged(string path, string newContents)
         {
@@ -688,7 +674,7 @@ trim_trailing_whitespace = true
                 {
                     var packRefElement = new XElement(
                         "ProjectReference",
-                        new XAttribute("Include", $"{reference.name}{GetProjectExtension()}")
+                        new XAttribute("Include", reference.name + GetProjectExtension())
                     );
 
                     assemblyRefItemGroup.Add(packRefElement);
@@ -697,22 +683,46 @@ trim_trailing_whitespace = true
                 project.Add(assemblyRefItemGroup);
             }
 
-            // Add Microsoft.Unity.Analyzers package reference with version being the latest available
-            var unityAnalyzersRefItemGroup = new XElement("ItemGroup");
-            var unityAnalyzersRefElement = new XElement(
-                "PackageReference",
-                new XAttribute("Include", "Microsoft.Unity.Analyzers"),
-                new XAttribute("Version", "*")
+            var analyzersRefItemGroup = new XElement("ItemGroup");
+
+            analyzersRefItemGroup.Add(
+                AddNugetPackageReference("Microsoft.Unity.Analyzers", "*", true)
             );
 
-            unityAnalyzersRefItemGroup.Add(unityAnalyzersRefElement);
-
-            project.Add(unityAnalyzersRefItemGroup);
+            project.Add(analyzersRefItemGroup);
 
             return document.ToString();
         }
 
-        static void AppendReference(string fullReference, XElement projectBuilder, string targetFrameWork)
+        private XElement AddNugetPackageReference(string nugetPackageId, string nugetPackageVersion)
+        {
+            return new(
+                "PackageReference",
+                new XAttribute("Include", nugetPackageId),
+                new XAttribute("Version", nugetPackageVersion)
+            );
+        }
+
+        private XElement AddNugetPackageReference(
+            string nugetPackageId,
+            string nugetPackageVersion,
+            bool isAnalyzer = false
+        )
+        {
+            return new(
+                "PackageReference",
+                new XAttribute("Include", nugetPackageId),
+                new XAttribute("Version", nugetPackageVersion),
+                new XElement("PrivateAssets", "all"),
+                new XElement("IncludeAssets", "runtime; build; native; contentfiles; analyzers")
+            );
+        }
+
+        static void AppendReference(
+            string fullReference,
+            XElement projectBuilder,
+            string targetFrameWork
+        )
         {
             var escapedFullPath = SecurityElement.Escape(fullReference);
             escapedFullPath = escapedFullPath.NormalizePath();
@@ -722,20 +732,12 @@ trim_trailing_whitespace = true
                 new XAttribute("Include", Path.GetFileNameWithoutExtension(escapedFullPath))
             );
 
-            #if !UNITY_2023_1_OR_NEWER
+#if !UNITY_2023_1_OR_NEWER
+            if (targetFrameWork.Contains("netstandard"))
+                escapedFullPath = HandleEditorReference(escapedFullPath);
+#endif
 
-            if(targetFrameWork.Contains("netstandard"))
-            {
-                var netstandardVersion = targetFrameWork == "netstandard2.1" ? "2.1.0" : "2.0.0";
-
-                escapedFullPath = HandleEditorReference(escapedFullPath, netstandardVersion);
-            } 
-            #endif
-
-            var hintPath = new XElement("HintPath")
-            {
-                Value = escapedFullPath
-            };
+            var hintPath = new XElement("HintPath") { Value = escapedFullPath };
             reference.Add(hintPath);
             projectBuilder.Add(reference);
         }
@@ -745,35 +747,75 @@ trim_trailing_whitespace = true
             This is a hack to get around the fact that the editor references a bunch of facades that are not in the netstandard2.0 or 2.1
             We need to replace the references with the ones that are in the netstandard2.0 or 2.1 compat folder
         */
-        static string HandleEditorReference(string referencePath, string netstandardVersion)
+        static string HandleEditorReference(string referencePath)
         {
             var facadesPath = "UnityReferenceAssemblies\\unity-4.8-api\\Facades\\";
             var referenceName = Path.GetFileNameWithoutExtension(referencePath);
 
             return referenceName switch
             {
-            "Microsoft.Win32.Primitives" or "System.AppContext" or "System.Collections.Concurrent" or
-            "System.Collections.NonGeneric" or "System.Collections.Specialized" or "System.ComponentModel" or
-            "System.ComponentModel.EventBasedAsync" or "System.Diagnostics.Contracts" or "System.Diagnostics.Debug" or
-            "System.Diagnostics.Tools" or "System.Diagnostics.Tracing" or "System.Globalization" or
-            "System.Globalization.Calendars" or "System.IO" or "System.IO.Compression" or
-            "System.IO.Compression.ZipFile" or "System.IO.FileSystem" or "System.IO.FileSystem.Primitives" or
-            "System.Linq" or "System.Linq.Expressions" or "System.Net.Http" or
-            "System.Net.Primitives" or "System.Net.Sockets" or "System.ObjectModel" or
-            "System.Reflection" or "System.Reflection.Extensions" or "System.Reflection.Primitives" or
-            "System.Resources.ResourceManager" or "System.Runtime" or "System.Runtime.Extensions" or
-            "System.Runtime.Handles" or "System.Runtime.InteropServices" or "System.Runtime.InteropServices.RuntimeInformation" or
-            "System.Runtime.Numerics" or "System.Security.Cryptography.Algorithms" or "System.Security.Cryptography.Encoding" or
-            "System.Security.Cryptography.Primitives" or "System.Security.Cryptography.X509Certificates" or "System.Text.Encoding" or
-            "System.Text.Encoding.Extensions" or "System.Text.RegularExpressions" or "System.Threading" or
-            "System.Threading.Tasks" or "System.Threading.Tasks.Parallel" or "System.Threading.Thread" or
-            "System.Threading.ThreadPool" or "System.Threading.Timer" or "System.ValueTuple" or
-            "System.Xml.ReaderWriter" or "System.Xml.XDocument" or "System.Xml.XmlDocument" or
-            "System.Xml.XmlSerializer" or "System.Xml.XPath" or "System.Xml.XPath.XDocument" =>
-            referencePath.Replace(facadesPath, $"NetStandard\\compat\\{netstandardVersion}\\shims\\netstandard\\"),
-            "System.Runtime.InteropServices.WindowsRuntime" => referencePath.Replace(facadesPath, $"NetStandard\\Extensions\\2.0.0\\"),
-            "netstandard" => referencePath.Replace(facadesPath, $"NetStandard\\{netstandardVersion}\\"),
-            _ => referencePath.Replace(facadesPath, $"NetStandard\\compat\\{netstandardVersion}\\shims\\"),
+                "Microsoft.Win32.Primitives"
+                or "System.AppContext"
+                or "System.Collections.Concurrent"
+                or "System.Collections.NonGeneric"
+                or "System.Collections.Specialized"
+                or "System.ComponentModel"
+                or "System.ComponentModel.EventBasedAsync"
+                or "System.Diagnostics.Contracts"
+                or "System.Diagnostics.Debug"
+                or "System.Diagnostics.Tools"
+                or "System.Diagnostics.Tracing"
+                or "System.Globalization"
+                or "System.Globalization.Calendars"
+                or "System.IO"
+                or "System.IO.Compression"
+                or "System.IO.Compression.ZipFile"
+                or "System.IO.FileSystem"
+                or "System.IO.FileSystem.Primitives"
+                or "System.Linq"
+                or "System.Linq.Expressions"
+                or "System.Net.Http"
+                or "System.Net.Primitives"
+                or "System.Net.Sockets"
+                or "System.ObjectModel"
+                or "System.Reflection"
+                or "System.Reflection.Extensions"
+                or "System.Reflection.Primitives"
+                or "System.Resources.ResourceManager"
+                or "System.Runtime"
+                or "System.Runtime.Extensions"
+                or "System.Runtime.Handles"
+                or "System.Runtime.InteropServices"
+                or "System.Runtime.InteropServices.RuntimeInformation"
+                or "System.Runtime.Numerics"
+                or "System.Security.Cryptography.Algorithms"
+                or "System.Security.Cryptography.Encoding"
+                or "System.Security.Cryptography.Primitives"
+                or "System.Security.Cryptography.X509Certificates"
+                or "System.Text.Encoding"
+                or "System.Text.Encoding.Extensions"
+                or "System.Text.RegularExpressions"
+                or "System.Threading"
+                or "System.Threading.Tasks"
+                or "System.Threading.Tasks.Parallel"
+                or "System.Threading.Thread"
+                or "System.Threading.ThreadPool"
+                or "System.Threading.Timer"
+                or "System.ValueTuple"
+                or "System.Xml.ReaderWriter"
+                or "System.Xml.XDocument"
+                or "System.Xml.XmlDocument"
+                or "System.Xml.XmlSerializer"
+                or "System.Xml.XPath"
+                or "System.Xml.XPath.XDocument"
+                    => referencePath.Replace(
+                        facadesPath,
+                        $"NetStandard\\compat\\2.1.0\\shims\\netstandard\\"
+                    ),
+                "System.Runtime.InteropServices.WindowsRuntime"
+                    => referencePath.Replace(facadesPath, $"NetStandard\\Extensions\\2.0.0\\"),
+                "netstandard" => referencePath.Replace(facadesPath, $"NetStandard\\2.1.0\\"),
+                _ => referencePath.Replace(facadesPath, $"NetStandard\\compat\\2.1.0\\shims\\"),
             };
         }
 #endif
@@ -790,10 +832,7 @@ trim_trailing_whitespace = true
             var langVersion = GenerateLangVersion(otherArguments["langversion"], assembly);
 
             var commonPropertyGroup = new XElement("PropertyGroup");
-            var langElement = new XElement("LangVersion")
-            {
-                Value = langVersion
-            };
+            var langElement = new XElement("LangVersion") { Value = langVersion };
             commonPropertyGroup.Add(langElement);
 
             // Allow unsafe code
@@ -826,10 +865,7 @@ trim_trailing_whitespace = true
                     .ToArray()
             );
             var definePropertyGroup = new XElement("PropertyGroup");
-            var definesElement = new XElement("DefineConstants")
-            {
-                Value = defines
-            };
+            var definesElement = new XElement("DefineConstants") { Value = defines };
             definePropertyGroup.Add(definesElement);
             builder.Add(definePropertyGroup);
 
@@ -837,16 +873,10 @@ trim_trailing_whitespace = true
 
             if (ruleSets.Length != 0)
             {
-                if (ruleSets.Length != 0)
+                foreach (var item in ruleSets)
                 {
-                    foreach (var item in ruleSets)
-                    {
-                        var ruleElement = new XElement("CodeAnalysisRuleSet")
-                        {
-                            Value = item
-                        };
-                        commonPropertyGroup.Add(ruleElement);
-                    }
+                    var ruleElement = new XElement("CodeAnalysisRuleSet") { Value = item };
+                    commonPropertyGroup.Add(ruleElement);
                 }
             }
 
@@ -856,7 +886,7 @@ trim_trailing_whitespace = true
         public string ProjectFile(Assembly assembly)
         {
             var fileBuilder = new StringBuilder(assembly.name);
-            fileBuilder.Append(".csproj");
+            _ = fileBuilder.Append(".csproj");
             return Path.Combine(ProjectDirectory, fileBuilder.ToString());
         }
 
@@ -871,9 +901,9 @@ trim_trailing_whitespace = true
         )
         {
             var langVersion = langVersionList.FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(langVersion))
-                return langVersion;
-            return assembly.compilerOptions.LanguageVersion;
+            return !string.IsNullOrWhiteSpace(langVersion)
+                ? langVersion
+                : assembly.compilerOptions.LanguageVersion;
         }
 
         private static string[] GenerateRoslynAnalyzerRulesetPath(
@@ -887,13 +917,6 @@ trim_trailing_whitespace = true
                 .Distinct()
                 .Select(x => MakeAbsolutePath(x).NormalizePath())
                 .ToArray();
-        }
-
-        private static string GenerateAnalyzerRuleSet(string[] paths)
-        {
-            return paths.Length == 0
-                ? string.Empty
-                : $"{Environment.NewLine}{string.Join(Environment.NewLine, paths.Select(a => $"    <CodeAnalysisRuleSet>{a}</CodeAnalysisRuleSet>"))}";
         }
 
         private static string MakeAbsolutePath(string path)
@@ -937,22 +960,22 @@ trim_trailing_whitespace = true
         {
             return string.Join(
                     "\r\n",
-                    @"",
-                    @"Microsoft Visual Studio Solution File, Format Version {0}",
-                    @"# Visual Studio {1}",
-                    @"{2}",
-                    @"Global",
-                    @"    GlobalSection(SolutionConfigurationPlatforms) = preSolution",
-                    @"        Debug|Any CPU = Debug|Any CPU",
-                    @"    EndGlobalSection",
-                    @"    GlobalSection(ProjectConfigurationPlatforms) = postSolution",
-                    @"{3}",
-                    @"    EndGlobalSection",
-                    @"    GlobalSection(SolutionProperties) = preSolution",
-                    @"        HideSolutionNode = FALSE",
-                    @"    EndGlobalSection",
-                    @"EndGlobal",
-                    @""
+                    "",
+                    "Microsoft Visual Studio Solution File, Format Version {0}",
+                    "# Visual Studio {1}",
+                    "{2}",
+                    "Global",
+                    "    GlobalSection(SolutionConfigurationPlatforms) = preSolution",
+                    "        Debug|Any CPU = Debug|Any CPU",
+                    "    EndGlobalSection",
+                    "    GlobalSection(ProjectConfigurationPlatforms) = postSolution",
+                    "{3}",
+                    "    EndGlobalSection",
+                    "    GlobalSection(SolutionProperties) = preSolution",
+                    "        HideSolutionNode = FALSE",
+                    "    EndGlobalSection",
+                    "EndGlobal",
+                    ""
                 )
                 .Replace("    ", "\t");
         }
@@ -961,8 +984,11 @@ trim_trailing_whitespace = true
         {
             return netSettings switch
             {
-                ApiCompatibilityLevel.NET_2_0 or ApiCompatibilityLevel.NET_2_0_Subset or
-                ApiCompatibilityLevel.NET_Web or ApiCompatibilityLevel.NET_Micro => k_TargetFrameworkVersion,
+                ApiCompatibilityLevel.NET_2_0
+                or ApiCompatibilityLevel.NET_2_0_Subset
+                or ApiCompatibilityLevel.NET_Web
+                or ApiCompatibilityLevel.NET_Micro
+                    => k_TargetFrameworkVersion,
                 ApiCompatibilityLevel.NET_Standard => "netstandard2.1",
                 ApiCompatibilityLevel.NET_Unity_4_8 => k_TargetFrameworkVersion,
                 _ => throw new ArgumentOutOfRangeException()
@@ -1029,13 +1055,6 @@ trim_trailing_whitespace = true
             return string.Format(m_SolutionProjectConfigurationTemplate, projectGuid);
         }
 
-        static string SkipPathPrefix(string path, string prefix)
-        {
-            if (path.StartsWith($@"{prefix}{Path.DirectorySeparatorChar}"))
-                return path[(prefix.Length + 1)..];
-            return path;
-        }
-
         string ProjectGuid(string assembly)
         {
             return m_GUIDProvider.ProjectGuid(m_ProjectName, assembly);
@@ -1054,11 +1073,14 @@ trim_trailing_whitespace = true
             return ".csproj";
         }
 
-
         void GenerateNugetJsonSourceFiles()
         {
             // Generate the nuget.json file for each csproj by getting each csproj as a string and then calling dotnet restore
-            var csprojFiles = Directory.GetFiles(ProjectDirectory, "*.csproj", SearchOption.AllDirectories);
+            var csprojFiles = Directory.GetFiles(
+                ProjectDirectory,
+                "*.csproj",
+                SearchOption.AllDirectories
+            );
 
             foreach (var csprojFile in csprojFiles)
             {
@@ -1071,20 +1093,21 @@ trim_trailing_whitespace = true
         {
             System.Diagnostics.Process process = new();
 
-            System.Diagnostics.ProcessStartInfo processStartInfo = new()
-            {
-                FileName = "dotnet", 
-                Arguments = arguments, 
-                RedirectStandardOutput = true, 
-                UseShellExecute = false, 
-                CreateNoWindow = true
-            };
+            System.Diagnostics.ProcessStartInfo processStartInfo =
+                new()
+                {
+                    FileName = "dotnet",
+                    Arguments = arguments,
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
             process.StartInfo = processStartInfo;
 
-            process.Start();
+            _ = process.Start();
 
             process.WaitForExit();
-            
+
             process.Close();
         }
 

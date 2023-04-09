@@ -41,8 +41,7 @@ namespace VSCodeEditor
 
         private ArgumentFlag m_ArgumentFlag = (ArgumentFlag)
             EditorPrefs.GetInt("unity_argument_flag", 0);
-        
-        ProjectGenerationFlag m_ProjectGenerationFlag = (ProjectGenerationFlag)
+        private ProjectGenerationFlag m_ProjectGenerationFlag = (ProjectGenerationFlag)
             EditorPrefs.GetInt("unity_project_generation_flag", 0);
 
         public string[] ProjectSupportedExtensions =>
@@ -154,16 +153,21 @@ namespace VSCodeEditor
                 return false;
             }
             var packageSource = packageInfo.source;
-            
+
             return packageSource switch
             {
-                PackageSource.Embedded => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Embedded),
-                PackageSource.Registry => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Registry),
-                PackageSource.BuiltIn => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.BuiltIn),
-                PackageSource.Unknown => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Unknown),
+                PackageSource.Embedded
+                    => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Embedded),
+                PackageSource.Registry
+                    => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Registry),
+                PackageSource.BuiltIn
+                    => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.BuiltIn),
+                PackageSource.Unknown
+                    => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Unknown),
                 PackageSource.Local => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Local),
                 PackageSource.Git => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.Git),
-                PackageSource.LocalTarball => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.LocalTarBall),
+                PackageSource.LocalTarball
+                    => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.LocalTarBall),
                 _ => false
             };
         }

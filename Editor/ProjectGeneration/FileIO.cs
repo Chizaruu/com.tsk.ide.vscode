@@ -18,7 +18,7 @@ namespace VSCodeEditor
         string EscapedRelativePathFor(string file, string projectDirectory);
     }
 
-    class FileIOProvider : IFileIO
+    internal class FileIOProvider : IFileIO
     {
         public bool Exists(string fileName)
         {
@@ -42,17 +42,17 @@ namespace VSCodeEditor
 
         public void CreateDirectory(string pathName)
         {
-            Directory.CreateDirectory(pathName);
+            _ = Directory.CreateDirectory(pathName);
         }
 
         public string EscapedRelativePathFor(string file, string projectDirectory)
         {
-            var projectDir = Path.GetFullPath(projectDirectory);
+            string projectDir = Path.GetFullPath(projectDirectory);
 
             // We have to normalize the path, because the PackageManagerRemapper assumes
             // dir seperators will be os specific.
-            var absolutePath = Path.GetFullPath(file.NormalizePath());
-            var path = SkipPathPrefix(absolutePath, projectDir);
+            string absolutePath = Path.GetFullPath(file.NormalizePath());
+            string path = SkipPathPrefix(absolutePath, projectDir);
 
             return SecurityElement.Escape(path);
         }
@@ -60,7 +60,7 @@ namespace VSCodeEditor
         private static string SkipPathPrefix(string path, string prefix)
         {
             return path.StartsWith(
-                $@"{prefix}{Path.DirectorySeparatorChar}",
+                $"{prefix}{Path.DirectorySeparatorChar}",
                 StringComparison.Ordinal
             )
                 ? path[(prefix.Length + 1)..]
