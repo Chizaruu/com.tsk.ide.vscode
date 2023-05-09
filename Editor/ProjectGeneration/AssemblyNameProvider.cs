@@ -22,7 +22,6 @@ namespace VSCodeEditor
             string[] systemReferenceDirectories
         );
         bool IsInternalizedPackagePath(string path);
-        void ToggleProjectGeneration(ProjectGenerationFlag preference);
     }
 
     internal interface IPackageInfoCache
@@ -37,20 +36,12 @@ namespace VSCodeEditor
             UnityEditor.PackageManager.PackageInfo
         > m_PackageInfoCache = new();
 
-        private ProjectGenerationFlag m_ProjectGenerationFlag = (ProjectGenerationFlag)
-            EditorPrefs.GetInt("unity_project_generation_flag", 0);
-
         public string[] ProjectSupportedExtensions =>
             EditorSettings.projectGenerationUserExtensions;
 
         public ProjectGenerationFlag ProjectGenerationFlag
         {
-            get => m_ProjectGenerationFlag;
-            private set
-            {
-                EditorPrefs.SetInt("unity_project_generation_flag", (int)value);
-                m_ProjectGenerationFlag = value;
-            }
+            get => (ProjectGenerationFlag)EditorPrefs.GetInt("unity_project_generation_flag", 0);
         }
 
         public string GetAssemblyNameFromScriptPath(string path)
@@ -156,18 +147,6 @@ namespace VSCodeEditor
                     => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.LocalTarBall),
                 _ => false
             };
-        }
-
-        public void ToggleProjectGeneration(ProjectGenerationFlag preference)
-        {
-            if (ProjectGenerationFlag.HasFlag(preference))
-            {
-                ProjectGenerationFlag ^= preference;
-            }
-            else
-            {
-                ProjectGenerationFlag |= preference;
-            }
         }
 
         public IEnumerable<string> GetRoslynAnalyzerPaths()

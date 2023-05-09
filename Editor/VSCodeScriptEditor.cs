@@ -188,8 +188,14 @@ namespace VSCodeEditor
                     "External Script Editor Args",
                     EditorArguments
                 );
-                ArgumentButton(ArgumentFlag.EditorArgument, "Use Code-Workspace", "");
-                RegenerateEditorArguments();
+                FlagButton(
+                    ArgumentFlag.EditorArgument,
+                    "Use Code-Workspace",
+                    "",
+                    (handler, flag) => handler.ArgumentFlag.HasFlag(flag),
+                    (handler, flag) => handler.ToggleArgument(flag)
+                );
+                RegenerateButton("Regenerate editor arguments");
                 EditorGUI.indentLevel--;
             }
 
@@ -206,10 +212,29 @@ namespace VSCodeEditor
             if (ShowConfigSection)
             {
                 EditorGUI.indentLevel++;
-                ConfigButton(ConfigFlag.Workspace, "Workspace", "");
-                ConfigButton(ConfigFlag.OmniSharp, "OmniSharp", "");
-                ConfigButton(ConfigFlag.EditorConfig, "EditorConfig", "");
-                RegenerateConfigFiles();
+                FlagButton(
+                    ConfigFlag.Workspace,
+                    "Workspace",
+                    "",
+                    (handler, flag) => handler.ConfigFlag.HasFlag(flag),
+                    (handler, flag) => handler.ToggleConfig(flag)
+                );
+                FlagButton(
+                    ConfigFlag.OmniSharp,
+                    "OmniSharp",
+                    "",
+                    (handler, flag) => handler.ConfigFlag.HasFlag(flag),
+                    (handler, flag) => handler.ToggleConfig(flag)
+                );
+                FlagButton(
+                    ConfigFlag.EditorConfig,
+                    "EditorConfig",
+                    "",
+                    (handler, flag) => handler.ConfigFlag.HasFlag(flag),
+                    (handler, flag) => handler.ToggleConfig(flag)
+                );
+
+                RegenerateButton("Regenerate config files");
                 EditorGUI.indentLevel--;
             }
 
@@ -226,94 +251,116 @@ namespace VSCodeEditor
             if (ShowProjectSection)
             {
                 EditorGUI.indentLevel++;
-                ProjectButton(ProjectGenerationFlag.Embedded, "Embedded packages", "");
-                ProjectButton(ProjectGenerationFlag.Local, "Local packages", "");
-                ProjectButton(ProjectGenerationFlag.Registry, "Registry packages", "");
-                ProjectButton(ProjectGenerationFlag.Git, "Git packages", "");
-                ProjectButton(ProjectGenerationFlag.BuiltIn, "Built-in packages", "");
-                ProjectButton(ProjectGenerationFlag.LocalTarBall, "Local tarball", "");
-                ProjectButton(ProjectGenerationFlag.Unknown, "Packages from unknown sources", "");
-                RegenerateProjectFiles();
+                FlagButton(
+                    ProjectGenerationFlag.Embedded,
+                    "Embedded packages",
+                    "",
+                    (handler, flag) => handler.ProjectGenerationFlag.HasFlag(flag),
+                    (handler, flag) => handler.ToggleProjectGeneration(flag)
+                );
+                FlagButton(
+                    ProjectGenerationFlag.Local,
+                    "Local packages",
+                    "",
+                    (handler, flag) => handler.ProjectGenerationFlag.HasFlag(flag),
+                    (handler, flag) => handler.ToggleProjectGeneration(flag)
+                );
+                FlagButton(
+                    ProjectGenerationFlag.Registry,
+                    "Registry packages",
+                    "",
+                    (handler, flag) => handler.ProjectGenerationFlag.HasFlag(flag),
+                    (handler, flag) => handler.ToggleProjectGeneration(flag)
+                );
+                FlagButton(
+                    ProjectGenerationFlag.Git,
+                    "Git packages",
+                    "",
+                    (handler, flag) => handler.ProjectGenerationFlag.HasFlag(flag),
+                    (handler, flag) => handler.ToggleProjectGeneration(flag)
+                );
+                FlagButton(
+                    ProjectGenerationFlag.BuiltIn,
+                    "Built-in packages",
+                    "",
+                    (handler, flag) => handler.ProjectGenerationFlag.HasFlag(flag),
+                    (handler, flag) => handler.ToggleProjectGeneration(flag)
+                );
+                FlagButton(
+                    ProjectGenerationFlag.LocalTarBall,
+                    "Local tarball",
+                    "",
+                    (handler, flag) => handler.ProjectGenerationFlag.HasFlag(flag),
+                    (handler, flag) => handler.ToggleProjectGeneration(flag)
+                );
+                FlagButton(
+                    ProjectGenerationFlag.Unknown,
+                    "Packages from unknown sources",
+                    "",
+                    (handler, flag) => handler.ProjectGenerationFlag.HasFlag(flag),
+                    (handler, flag) => handler.ToggleProjectGeneration(flag)
+                );
+                RegenerateButton("Regenerate project files");
                 EditorGUI.indentLevel--;
             }
 
             EditorGUILayout.EndFoldoutHeaderGroup();
         }
 
-        void ArgumentButton(ArgumentFlag preference, string guiMessage, string toolTip)
+        void FlagButton<T>(
+            T flag,
+            string guiMessage,
+            string toolTip,
+            Func<IFlagHandler, T, bool> flagGetter,
+            Action<IFlagHandler, T> flagToggler
+        )
+            where T : Enum
         {
-            var prevValue = m_ConfigGeneration.FlagHandler.ArgumentFlag.HasFlag(preference);
-            var newValue = EditorGUILayout.Toggle(new GUIContent(guiMessage, toolTip), prevValue);
-            if (newValue != prevValue)
-            {
-                m_ConfigGeneration.FlagHandler.ToggleArgument(preference);
-            }
-        }
-
-        void ConfigButton(ConfigFlag preference, string guiMessage, string toolTip)
-        {
-            var prevValue = m_ConfigGeneration.FlagHandler.ConfigFlag.HasFlag(preference);
-            var newValue = EditorGUILayout.Toggle(new GUIContent(guiMessage, toolTip), prevValue);
-            if (newValue != prevValue)
-            {
-                m_ConfigGeneration.FlagHandler.ToggleConfig(preference);
-            }
-        }
-
-        void ProjectButton(ProjectGenerationFlag preference, string guiMessage, string toolTip)
-        {
-            var prevValue = m_ProjectGeneration.AssemblyNameProvider.ProjectGenerationFlag.HasFlag(
-                preference
+            var previousValue = flagGetter(m_ConfigGeneration.FlagHandler, flag);
+            var currentValue = EditorGUILayout.Toggle(
+                new GUIContent(guiMessage, toolTip),
+                previousValue
             );
-            var newValue = EditorGUILayout.Toggle(new GUIContent(guiMessage, toolTip), prevValue);
-            if (newValue != prevValue)
+            if (currentValue != previousValue)
             {
-                m_ProjectGeneration.AssemblyNameProvider.ToggleProjectGeneration(preference);
+                flagToggler(m_ConfigGeneration.FlagHandler, flag);
             }
         }
 
-        void RegenerateEditorArguments()
+        void RegenerateButton(string guiMessage)
         {
             var rect = EditorGUI.IndentedRect(
                 EditorGUILayout.GetControlRect(new GUILayoutOption[] { })
             );
             rect.width = 252;
-            if (GUI.Button(rect, "Reset editor arguments"))
+            if (GUI.Button(rect, new GUIContent(guiMessage)))
             {
-                if (
-                    m_ConfigGeneration.FlagHandler.ArgumentFlag.HasFlag(ArgumentFlag.EditorArgument)
-                )
+                switch (guiMessage)
                 {
-                    EditorArguments = ExternalEditorWorkplaceDefaultArgument;
+                    case "Regenerate editor arguments":
+                        if (
+                            m_ConfigGeneration.FlagHandler.ArgumentFlag.HasFlag(
+                                ArgumentFlag.EditorArgument
+                            )
+                        )
+                        {
+                            EditorArguments = ExternalEditorWorkplaceDefaultArgument;
+                        }
+                        else
+                        {
+                            EditorArguments = ExternalEditorDefaultArgument;
+                        }
+                        break;
+                    case "Regenerate config files":
+                        m_ConfigGeneration.Sync();
+                        break;
+                    case "Regenerate project files":
+                        m_ProjectGeneration.Sync();
+                        break;
+                    default:
+                        UnityEngine.Debug.LogError("Unknown button pressed");
+                        break;
                 }
-                else
-                {
-                    EditorArguments = ExternalEditorDefaultArgument;
-                }
-            }
-        }
-
-        void RegenerateConfigFiles()
-        {
-            var rect = EditorGUI.IndentedRect(
-                EditorGUILayout.GetControlRect(new GUILayoutOption[] { })
-            );
-            rect.width = 252;
-            if (GUI.Button(rect, "Regenerate config files"))
-            {
-                m_ConfigGeneration.Sync();
-            }
-        }
-
-        void RegenerateProjectFiles()
-        {
-            var rect = EditorGUI.IndentedRect(
-                EditorGUILayout.GetControlRect(new GUILayoutOption[] { })
-            );
-            rect.width = 252;
-            if (GUI.Button(rect, "Regenerate project files"))
-            {
-                m_ProjectGeneration.Sync();
             }
         }
 

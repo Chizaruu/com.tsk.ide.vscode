@@ -41,8 +41,10 @@ namespace VSCodeEditor
     {
         ArgumentFlag ArgumentFlag { get; }
         ConfigFlag ConfigFlag { get; }
+        ProjectGenerationFlag ProjectGenerationFlag { get; }
         void ToggleArgument(ArgumentFlag preference);
         void ToggleConfig(ConfigFlag preference);
+        void ToggleProjectGeneration(ProjectGenerationFlag preference);
     }
 
     internal class FlagHandler : IFlagHandler
@@ -51,6 +53,9 @@ namespace VSCodeEditor
             EditorPrefs.GetInt("unity_argument_flag", 0);
 
         private ConfigFlag m_ConfigFlag = (ConfigFlag)EditorPrefs.GetInt("unity_config_flag", 0);
+
+        private ProjectGenerationFlag m_ProjectGenerationFlag = (ProjectGenerationFlag)
+            EditorPrefs.GetInt("unity_project_generation_flag", 0);
 
         public ArgumentFlag ArgumentFlag
         {
@@ -69,6 +74,16 @@ namespace VSCodeEditor
             {
                 EditorPrefs.SetInt("unity_config_flag", (int)value);
                 m_ConfigFlag = value;
+            }
+        }
+
+        public ProjectGenerationFlag ProjectGenerationFlag
+        {
+            get => m_ProjectGenerationFlag;
+            private set
+            {
+                EditorPrefs.SetInt("unity_project_generation_flag", (int)value);
+                m_ProjectGenerationFlag = value;
             }
         }
 
@@ -93,6 +108,18 @@ namespace VSCodeEditor
             else
             {
                 ConfigFlag |= preference;
+            }
+        }
+
+        public void ToggleProjectGeneration(ProjectGenerationFlag preference)
+        {
+            if (ProjectGenerationFlag.HasFlag(preference))
+            {
+                ProjectGenerationFlag ^= preference;
+            }
+            else
+            {
+                ProjectGenerationFlag |= preference;
             }
         }
     }
