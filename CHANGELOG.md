@@ -1,5 +1,12 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.3.6] - 2023-05-10
+
+- [Added config section to Externals Tools](https://github.com/Chizaruu/com.tsk.ide.vscode/commit/8da03f5885c268eaecdfd904e6a324be9bf9b82a)
+- [Added Foldouts to remove visual clutter](https://github.com/Chizaruu/com.tsk.ide.vscode/commit/ba73359980ad49f8eca6d485eda6f54e76a2bbff)
+- A "TSKDoNotDelete" text file is generated when the package is first added. This was done to counter the constant auto-generation that occurred when you would delete the config files.
+- [Added Configurable Config Settings](https://github.com/Chizaruu/com.tsk.ide.vscode/commit/d7a33951346235a91606e258cb206cc68e65e723)
+
 ## [1.3.4] - 2023-04-07
 
 - Minimum Unity version is now 2021.3
