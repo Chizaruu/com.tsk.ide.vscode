@@ -21,7 +21,6 @@ namespace VSCodeEditor
         string SolutionFile();
         string ProjectDirectory { get; }
         IAssemblyNameProvider AssemblyNameProvider { get; }
-        void GenerateAll(bool generateAll);
         bool SolutionExists();
     }
 
@@ -34,102 +33,6 @@ namespace VSCodeEditor
         }
 
         const string k_WindowsNewline = "\r\n";
-
-        const string k_SettingsJson =
-            /*lang=json,strict*/
-            @"{
-    ""files.exclude"":
-    {
-        ""**/.DS_Store"":true,
-        ""**/.git"":true,
-        ""**/.gitmodules"":true,
-        ""**/*.booproj"":true,
-        ""**/*.pidb"":true,
-        ""**/*.suo"":true,
-        ""**/*.user"":true,
-        ""**/*.userprefs"":true,
-        ""**/*.unityproj"":true,
-        ""**/*.dll"":true,
-        ""**/*.exe"":true,
-        ""**/*.pdf"":true,
-        ""**/*.mid"":true,
-        ""**/*.midi"":true,
-        ""**/*.wav"":true,
-        ""**/*.gif"":true,
-        ""**/*.ico"":true,
-        ""**/*.jpg"":true,
-        ""**/*.jpeg"":true,
-        ""**/*.png"":true,
-        ""**/*.psd"":true,
-        ""**/*.tga"":true,
-        ""**/*.tif"":true,
-        ""**/*.tiff"":true,
-        ""**/*.3ds"":true,
-        ""**/*.3DS"":true,
-        ""**/*.fbx"":true,
-        ""**/*.FBX"":true,
-        ""**/*.lxo"":true,
-        ""**/*.LXO"":true,
-        ""**/*.ma"":true,
-        ""**/*.MA"":true,
-        ""**/*.obj"":true,
-        ""**/*.OBJ"":true,
-        ""**/*.asset"":true,
-        ""**/*.cubemap"":true,
-        ""**/*.flare"":true,
-        ""**/*.mat"":true,
-        ""**/*.meta"":true,
-        ""**/*.prefab"":true,
-        ""**/*.unity"":true,
-        ""build/"":true,
-        ""Build/"":true,
-        ""Library/"":true,
-        ""library/"":true,
-        ""obj/"":true,
-        ""Obj/"":true,
-        ""ProjectSettings/"":true,
-        ""temp/"":true,
-        ""Temp/"":true
-    }
-}";
-
-        const string k_WorkspaceJson =
-            /*lang=json,strict*/
-            @"{
-	""folders"": [
-		{
-			""path"": "".""
-		}
-	]
-}";
-
-        const string k_OmniSharpJson =
-            /*lang=json,strict*/
-            @"{
-    ""RoslynExtensionsOptions"": {
-        ""enableRoslynAnalyzers"": true,
-        ""enableEditorConfigSupport"": true,
-        ""analyzeOpenDocumentsOnly"": true,
-        ""sdkIncludePrereleases"": false,
-        ""organizeImportsOnFormat"": true,
-        ""threadsToUseForAnalyzers"": true,
-        ""useModernNet"": true,
-        ""documentAnalysisTimeoutMs"": 600000
-    }
-}";
-
-        const string k_EditorConfig =
-            @"# EditorConfig is awesome: http://EditorConfig.org
-
-# top-most EditorConfig file
-root = true
-
-# 4 space indentation
-[*.cs]
-indent_style = space
-indent_size = 4
-trim_trailing_whitespace = true
-";
 
         /// <summary>
         /// Map source extensions to ScriptingLanguages
@@ -169,20 +72,6 @@ trim_trailing_whitespace = true
 
         public string ProjectDirectory { get; }
         IAssemblyNameProvider IGenerator.AssemblyNameProvider => m_AssemblyNameProvider;
-
-        public void GenerateAll(bool generateAll)
-        {
-            m_AssemblyNameProvider.ToggleProjectGeneration(
-                ProjectGenerationFlag.BuiltIn
-                    | ProjectGenerationFlag.Embedded
-                    | ProjectGenerationFlag.Git
-                    | ProjectGenerationFlag.Local
-                    | ProjectGenerationFlag.LocalTarBall
-                    | ProjectGenerationFlag.PlayerAssemblies
-                    | ProjectGenerationFlag.Registry
-                    | ProjectGenerationFlag.Unknown
-            );
-        }
 
         readonly string m_ProjectName;
         readonly IAssemblyNameProvider m_AssemblyNameProvider;
@@ -437,11 +326,6 @@ trim_trailing_whitespace = true
             }
 
             GenerateNugetJsonSourceFiles();
-
-            WriteVSCodeSettingsFiles();
-            WriteWorkspaceFile();
-            WriteOmniSharpConfigFile();
-            WriteEditorConfigFile();
         }
 
         List<ResponseFileData> ParseResponseFileData(Assembly assembly)
@@ -1109,43 +993,6 @@ trim_trailing_whitespace = true
             process.WaitForExit();
 
             process.Close();
-        }
-
-        void WriteVSCodeSettingsFiles()
-        {
-            var vsCodeDirectory = Path.Combine(ProjectDirectory, ".vscode");
-
-            if (!m_FileIOProvider.Exists(vsCodeDirectory))
-                m_FileIOProvider.CreateDirectory(vsCodeDirectory);
-
-            var vsCodeSettingsJson = Path.Combine(vsCodeDirectory, "settings.json");
-
-            if (!m_FileIOProvider.Exists(vsCodeSettingsJson))
-                m_FileIOProvider.WriteAllText(vsCodeSettingsJson, k_SettingsJson);
-        }
-
-        void WriteWorkspaceFile()
-        {
-            var workspaceFile = Path.Combine(ProjectDirectory, $"{m_ProjectName}.code-workspace");
-
-            if (!m_FileIOProvider.Exists(workspaceFile))
-                m_FileIOProvider.WriteAllText(workspaceFile, k_WorkspaceJson);
-        }
-
-        void WriteOmniSharpConfigFile()
-        {
-            var omniSharpConfig = Path.Combine(ProjectDirectory, "omnisharp.json");
-
-            if (!m_FileIOProvider.Exists(omniSharpConfig))
-                m_FileIOProvider.WriteAllText(omniSharpConfig, k_OmniSharpJson);
-        }
-
-        void WriteEditorConfigFile()
-        {
-            var editorConfig = Path.Combine(ProjectDirectory, ".editorconfig");
-
-            if (!m_FileIOProvider.Exists(editorConfig))
-                m_FileIOProvider.WriteAllText(editorConfig, k_EditorConfig);
         }
     }
 

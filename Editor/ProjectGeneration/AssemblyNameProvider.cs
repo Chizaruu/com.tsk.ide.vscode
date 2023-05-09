@@ -10,7 +10,6 @@ namespace VSCodeEditor
     public interface IAssemblyNameProvider
     {
         string[] ProjectSupportedExtensions { get; }
-        ArgumentFlag ArgumentFlag { get; }
         ProjectGenerationFlag ProjectGenerationFlag { get; }
         string GetAssemblyNameFromScriptPath(string path);
         IEnumerable<Assembly> GetAssemblies(Func<string, bool> shouldFileBePartOfSolution);
@@ -23,7 +22,6 @@ namespace VSCodeEditor
             string[] systemReferenceDirectories
         );
         bool IsInternalizedPackagePath(string path);
-        void ToggleArgument(ArgumentFlag preference);
         void ToggleProjectGeneration(ProjectGenerationFlag preference);
     }
 
@@ -39,23 +37,11 @@ namespace VSCodeEditor
             UnityEditor.PackageManager.PackageInfo
         > m_PackageInfoCache = new();
 
-        private ArgumentFlag m_ArgumentFlag = (ArgumentFlag)
-            EditorPrefs.GetInt("unity_argument_flag", 0);
         private ProjectGenerationFlag m_ProjectGenerationFlag = (ProjectGenerationFlag)
             EditorPrefs.GetInt("unity_project_generation_flag", 0);
 
         public string[] ProjectSupportedExtensions =>
             EditorSettings.projectGenerationUserExtensions;
-
-        public ArgumentFlag ArgumentFlag
-        {
-            get => m_ArgumentFlag;
-            private set
-            {
-                EditorPrefs.SetInt("unity_argument_flag", (int)value);
-                m_ArgumentFlag = value;
-            }
-        }
 
         public ProjectGenerationFlag ProjectGenerationFlag
         {
@@ -170,18 +156,6 @@ namespace VSCodeEditor
                     => !ProjectGenerationFlag.HasFlag(ProjectGenerationFlag.LocalTarBall),
                 _ => false
             };
-        }
-
-        public void ToggleArgument(ArgumentFlag preference)
-        {
-            if (ArgumentFlag.HasFlag(preference))
-            {
-                ArgumentFlag ^= preference;
-            }
-            else
-            {
-                ArgumentFlag |= preference;
-            }
         }
 
         public void ToggleProjectGeneration(ProjectGenerationFlag preference)

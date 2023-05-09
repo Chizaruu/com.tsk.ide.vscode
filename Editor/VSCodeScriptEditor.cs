@@ -4,17 +4,11 @@ using System.IO;
 using System.Linq;
 using Unity.CodeEditor;
 using UnityEditor;
+using UnityEditor.PackageManager;
 using UnityEngine;
 
 namespace VSCodeEditor
 {
-    [Flags]
-    public enum ArgumentFlag
-    {
-        None = 0,
-        Argument = 1,
-    }
-
     [InitializeOnLoad]
     public class VSCodeScriptEditor : IExternalCodeEditor
     {
@@ -26,6 +20,7 @@ namespace VSCodeEditor
         string m_Arguments;
         readonly IDiscovery m_Discoverability;
         readonly IGenerator m_ProjectGeneration;
+        readonly IConfigGenerator m_ConfigGeneration;
 
         static readonly string[] k_SupportedFileNames =
         {
@@ -140,6 +135,14 @@ namespace VSCodeEditor
             ArgumentsReset();
             EditorGUI.indentLevel--;
 
+            EditorGUILayout.LabelField("Generate config files for:");
+            EditorGUI.indentLevel++;
+            ConfigButton(ConfigFlag.Workspace, "Workspace", "");
+            ConfigButton(ConfigFlag.OmniSharp, "OmniSharp", "");
+            ConfigButton(ConfigFlag.EditorConfig, "EditorConfig", "");
+            RegenerateConfigFiles();
+            EditorGUI.indentLevel--;
+
             EditorGUILayout.LabelField("Generate .csproj files for:");
             EditorGUI.indentLevel++;
             SettingsButton(ProjectGenerationFlag.Embedded, "Embedded packages", "");
@@ -167,9 +170,7 @@ namespace VSCodeEditor
             rect.width = 252;
             if (GUI.Button(rect, k_ResetArguments))
             {
-                if (m_ProjectGeneration.AssemblyNameProvider.ArgumentFlag.HasFlag(
-                    ArgumentFlag.Argument
-                ))
+                if (m_ConfigGeneration.FlagHandler.ArgumentFlag.HasFlag(ArgumentFlag.Argument))
                 {
                     Arguments = WorkplaceDefaultArgument;
                 }
@@ -180,15 +181,23 @@ namespace VSCodeEditor
             }
         }
 
-        void RegenerateProjectFiles()
+        void ArgumentButton(ArgumentFlag preference, string guiMessage, string toolTip)
         {
-            var rect = EditorGUI.IndentedRect(
-                EditorGUILayout.GetControlRect(new GUILayoutOption[] { })
-            );
-            rect.width = 252;
-            if (GUI.Button(rect, "Regenerate project files"))
+            var prevValue = m_ConfigGeneration.FlagHandler.ArgumentFlag.HasFlag(preference);
+            var newValue = EditorGUILayout.Toggle(new GUIContent(guiMessage, toolTip), prevValue);
+            if (newValue != prevValue)
             {
-                m_ProjectGeneration.Sync();
+                m_ConfigGeneration.FlagHandler.ToggleArgument(preference);
+            }
+        }
+
+        void ConfigButton(ConfigFlag preference, string guiMessage, string toolTip)
+        {
+            var prevValue = m_ConfigGeneration.FlagHandler.ConfigFlag.HasFlag(preference);
+            var newValue = EditorGUILayout.Toggle(new GUIContent(guiMessage, toolTip), prevValue);
+            if (newValue != prevValue)
+            {
+                m_ConfigGeneration.FlagHandler.ToggleConfig(preference);
             }
         }
 
@@ -204,15 +213,27 @@ namespace VSCodeEditor
             }
         }
 
-        void ArgumentButton(ArgumentFlag preference, string guiMessage, string toolTip)
+        void RegenerateConfigFiles()
         {
-            var prevValue = m_ProjectGeneration.AssemblyNameProvider.ArgumentFlag.HasFlag(
-                preference
+            var rect = EditorGUI.IndentedRect(
+                EditorGUILayout.GetControlRect(new GUILayoutOption[] { })
             );
-            var newValue = EditorGUILayout.Toggle(new GUIContent(guiMessage, toolTip), prevValue);
-            if (newValue != prevValue)
+            rect.width = 252;
+            if (GUI.Button(rect, "Regenerate config files"))
             {
-                m_ProjectGeneration.AssemblyNameProvider.ToggleArgument(preference);
+                m_ConfigGeneration.Sync();
+            }
+        }
+
+        void RegenerateProjectFiles()
+        {
+            var rect = EditorGUI.IndentedRect(
+                EditorGUILayout.GetControlRect(new GUILayoutOption[] { })
+            );
+            rect.width = 252;
+            if (GUI.Button(rect, "Regenerate project files"))
+            {
+                m_ProjectGeneration.Sync();
             }
         }
 
@@ -239,6 +260,12 @@ namespace VSCodeEditor
                 addedFiles.Union(deletedFiles).Union(movedFiles).Union(movedFromFiles).ToList(),
                 importedFiles
             );
+
+            if (!m_ConfigGeneration.FlagHandler.ArgumentFlag.HasFlag(ArgumentFlag.Setup))
+            {
+                m_ConfigGeneration.Sync(true);
+                m_ConfigGeneration.FlagHandler.ToggleArgument(ArgumentFlag.Setup);
+            }
         }
 
         public void SyncAll()
@@ -275,7 +302,7 @@ namespace VSCodeEditor
             }
             else
             {
-                arguments = m_ProjectGeneration.AssemblyNameProvider.ArgumentFlag.HasFlag(
+                arguments = m_ConfigGeneration.FlagHandler.ArgumentFlag.HasFlag(
                     ArgumentFlag.Argument
                 )
                     ? $@"""{workspacePath}"""
@@ -336,17 +363,25 @@ namespace VSCodeEditor
 
         public CodeEditor.Installation[] Installations => m_Discoverability.PathCallback();
 
-        public VSCodeScriptEditor(IDiscovery discovery, IGenerator projectGeneration)
+        public VSCodeScriptEditor(
+            IDiscovery discovery,
+            IGenerator projectGeneration,
+            IConfigGenerator configGeneration
+        )
         {
             m_Discoverability = discovery;
             m_ProjectGeneration = projectGeneration;
+            m_ConfigGeneration = configGeneration;
         }
 
         static VSCodeScriptEditor()
         {
+            string projectDirectory = Directory.GetParent(Application.dataPath).FullName;
+
             var editor = new VSCodeScriptEditor(
                 new VSCodeDiscovery(),
-                new ProjectGeneration(Directory.GetParent(Application.dataPath).FullName)
+                new ProjectGeneration(projectDirectory),
+                new ConfigGeneration(projectDirectory)
             );
             CodeEditor.Register(editor);
 
