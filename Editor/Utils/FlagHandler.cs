@@ -11,8 +11,7 @@ namespace VSCodeEditor
     public enum ArgumentFlag
     {
         None = 0,
-        Argument = 1,
-        Setup = 2,
+        EditorArgument = 1,
     }
 
     [Flags]
@@ -56,7 +55,11 @@ namespace VSCodeEditor
         public ArgumentFlag ArgumentFlag
         {
             get => m_ArgumentFlag;
-            private set { EditorPrefs.SetInt("unity_argument_flag", (int)value); }
+            private set
+            {
+                EditorPrefs.SetInt("unity_argument_flag", (int)value);
+                m_ArgumentFlag = value;
+            }
         }
 
         public ConfigFlag ConfigFlag

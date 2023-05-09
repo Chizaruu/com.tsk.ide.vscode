@@ -18,6 +18,7 @@ namespace VSCodeEditor
     {
         string ProjectDirectory { get; }
         IFlagHandler FlagHandler { get; }
+        bool TskFileExists();
         void Sync(bool force = false);
     }
 
@@ -138,6 +139,20 @@ trim_trailing_whitespace = true
             m_ProjectName = Path.GetFileName(ProjectDirectory);
             m_FlagHandler = new FlagHandler();
             m_FileIOProvider = new FileIOProvider();
+        }
+
+        public bool TskFileExists()
+        {
+            var doNotDelete = Path.Combine(ProjectDirectory, "TSKDoNotDelete.txt");
+
+            if (m_FileIOProvider.Exists(doNotDelete))
+                return true;
+
+            m_FileIOProvider.WriteAllText(
+                doNotDelete,
+                "This file is used by the TSK VSCode Editor package. Deleting it will cause your configuration to be overwritten."
+            );
+            return false;
         }
 
         public void Sync(bool canForce = false)

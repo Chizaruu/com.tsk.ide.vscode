@@ -14,10 +14,12 @@ namespace VSCodeEditor
     {
         const string vscode_argument = "vscode_arguments";
         const string vscode_extension = "vscode_userExtensions";
-        static readonly GUIContent k_ResetArguments = EditorGUIUtility.TrTextContent(
-            "Reset arguments"
-        );
-        string m_Arguments;
+        string m_EditorArguments;
+
+        bool m_ShowEditorSection = false;
+        bool m_ShowConfigSection = false;
+        bool m_ShowProjectSection = true;
+
         readonly IDiscovery m_Discoverability;
         readonly IGenerator m_ProjectGeneration;
         readonly IConfigGenerator m_ConfigGeneration;
@@ -39,19 +41,53 @@ namespace VSCodeEditor
 
         static string DefaultApp => EditorPrefs.GetString("kScriptsDefaultApp");
 
-        static string DefaultArgument { get; } =
+        static string ExternalEditorDefaultArgument { get; } =
             "\"$(ProjectPath)\" -g \"$(File)\":$(Line):$(Column)";
 
-        static string WorkplaceDefaultArgument { get; } =
+        static string ExternalEditorWorkplaceDefaultArgument { get; } =
             "\"$(ProjectPath)/$(ProjectName).code-workspace\" -g \"$(File)\":$(Line):$(Column)";
 
-        string Arguments
+        string EditorArguments
         {
-            get => m_Arguments ??= EditorPrefs.GetString(vscode_argument, DefaultArgument);
+            get =>
+                m_EditorArguments ??= EditorPrefs.GetString(
+                    vscode_argument,
+                    ExternalEditorDefaultArgument
+                );
             set
             {
-                m_Arguments = value;
+                m_EditorArguments = value;
                 EditorPrefs.SetString(vscode_argument, value);
+            }
+        }
+
+        bool ShowEditorSection
+        {
+            get => m_ShowEditorSection || EditorPrefs.GetBool("vscode_showEditorSection", false);
+            set
+            {
+                m_ShowEditorSection = value;
+                EditorPrefs.SetBool("vscode_showEditorSection", value);
+            }
+        }
+
+        bool ShowConfigSection
+        {
+            get => m_ShowConfigSection || EditorPrefs.GetBool("vscode_showConfigSection", false);
+            set
+            {
+                m_ShowConfigSection = value;
+                EditorPrefs.SetBool("vscode_showConfigSection", value);
+            }
+        }
+
+        bool ShowProjectSection
+        {
+            get => m_ShowProjectSection || EditorPrefs.GetBool("vscode_showProjectSection", false);
+            set
+            {
+                m_ShowProjectSection = value;
+                EditorPrefs.SetBool("vscode_showProjectSection", value);
             }
         }
 
@@ -128,32 +164,9 @@ namespace VSCodeEditor
 
         public void OnGUI()
         {
-            Arguments = EditorGUILayout.TextField("External Script Editor Args", Arguments);
-            EditorGUILayout.LabelField("Reset arguments to default:");
-            EditorGUI.indentLevel++;
-            ArgumentButton(ArgumentFlag.Argument, "Use Code-Workspace", "");
-            ArgumentsReset();
-            EditorGUI.indentLevel--;
-
-            EditorGUILayout.LabelField("Generate config files for:");
-            EditorGUI.indentLevel++;
-            ConfigButton(ConfigFlag.Workspace, "Workspace", "");
-            ConfigButton(ConfigFlag.OmniSharp, "OmniSharp", "");
-            ConfigButton(ConfigFlag.EditorConfig, "EditorConfig", "");
-            RegenerateConfigFiles();
-            EditorGUI.indentLevel--;
-
-            EditorGUILayout.LabelField("Generate .csproj files for:");
-            EditorGUI.indentLevel++;
-            SettingsButton(ProjectGenerationFlag.Embedded, "Embedded packages", "");
-            SettingsButton(ProjectGenerationFlag.Local, "Local packages", "");
-            SettingsButton(ProjectGenerationFlag.Registry, "Registry packages", "");
-            SettingsButton(ProjectGenerationFlag.Git, "Git packages", "");
-            SettingsButton(ProjectGenerationFlag.BuiltIn, "Built-in packages", "");
-            SettingsButton(ProjectGenerationFlag.LocalTarBall, "Local tarball", "");
-            SettingsButton(ProjectGenerationFlag.Unknown, "Packages from unknown sources", "");
-            RegenerateProjectFiles();
-            EditorGUI.indentLevel--;
+            RenderEditorSection();
+            RenderConfigSection();
+            RenderProjectSection();
 
             HandledExtensionsString = EditorGUILayout.TextField(
                 new GUIContent("Extensions handled: "),
@@ -161,24 +174,70 @@ namespace VSCodeEditor
             );
         }
 
-        // Reset the arguments based on ArgumentFlag
-        void ArgumentsReset()
+        void RenderEditorSection()
         {
-            var rect = EditorGUI.IndentedRect(
-                EditorGUILayout.GetControlRect(new GUILayoutOption[] { })
+            ShowEditorSection = EditorGUILayout.BeginFoldoutHeaderGroup(
+                ShowEditorSection,
+                "Configure Editor Script Editor Arguments:"
             );
-            rect.width = 252;
-            if (GUI.Button(rect, k_ResetArguments))
+
+            if (ShowEditorSection)
             {
-                if (m_ConfigGeneration.FlagHandler.ArgumentFlag.HasFlag(ArgumentFlag.Argument))
-                {
-                    Arguments = WorkplaceDefaultArgument;
-                }
-                else
-                {
-                    Arguments = DefaultArgument;
-                }
+                EditorGUI.indentLevel++;
+                EditorArguments = EditorGUILayout.TextField(
+                    "External Script Editor Args",
+                    EditorArguments
+                );
+                ArgumentButton(ArgumentFlag.EditorArgument, "Use Code-Workspace", "");
+                RegenerateEditorArguments();
+                EditorGUI.indentLevel--;
             }
+
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+
+        void RenderConfigSection()
+        {
+            ShowConfigSection = EditorGUILayout.BeginFoldoutHeaderGroup(
+                ShowConfigSection,
+                "Generate config files for:"
+            );
+
+            if (ShowConfigSection)
+            {
+                EditorGUI.indentLevel++;
+                ConfigButton(ConfigFlag.Workspace, "Workspace", "");
+                ConfigButton(ConfigFlag.OmniSharp, "OmniSharp", "");
+                ConfigButton(ConfigFlag.EditorConfig, "EditorConfig", "");
+                RegenerateConfigFiles();
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+
+        void RenderProjectSection()
+        {
+            ShowProjectSection = EditorGUILayout.BeginFoldoutHeaderGroup(
+                ShowProjectSection,
+                "Generate .csproj files for:"
+            );
+
+            if (ShowProjectSection)
+            {
+                EditorGUI.indentLevel++;
+                ProjectButton(ProjectGenerationFlag.Embedded, "Embedded packages", "");
+                ProjectButton(ProjectGenerationFlag.Local, "Local packages", "");
+                ProjectButton(ProjectGenerationFlag.Registry, "Registry packages", "");
+                ProjectButton(ProjectGenerationFlag.Git, "Git packages", "");
+                ProjectButton(ProjectGenerationFlag.BuiltIn, "Built-in packages", "");
+                ProjectButton(ProjectGenerationFlag.LocalTarBall, "Local tarball", "");
+                ProjectButton(ProjectGenerationFlag.Unknown, "Packages from unknown sources", "");
+                RegenerateProjectFiles();
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.EndFoldoutHeaderGroup();
         }
 
         void ArgumentButton(ArgumentFlag preference, string guiMessage, string toolTip)
@@ -201,7 +260,7 @@ namespace VSCodeEditor
             }
         }
 
-        void SettingsButton(ProjectGenerationFlag preference, string guiMessage, string toolTip)
+        void ProjectButton(ProjectGenerationFlag preference, string guiMessage, string toolTip)
         {
             var prevValue = m_ProjectGeneration.AssemblyNameProvider.ProjectGenerationFlag.HasFlag(
                 preference
@@ -210,6 +269,27 @@ namespace VSCodeEditor
             if (newValue != prevValue)
             {
                 m_ProjectGeneration.AssemblyNameProvider.ToggleProjectGeneration(preference);
+            }
+        }
+
+        void RegenerateEditorArguments()
+        {
+            var rect = EditorGUI.IndentedRect(
+                EditorGUILayout.GetControlRect(new GUILayoutOption[] { })
+            );
+            rect.width = 252;
+            if (GUI.Button(rect, "Reset editor arguments"))
+            {
+                if (
+                    m_ConfigGeneration.FlagHandler.ArgumentFlag.HasFlag(ArgumentFlag.EditorArgument)
+                )
+                {
+                    EditorArguments = ExternalEditorWorkplaceDefaultArgument;
+                }
+                else
+                {
+                    EditorArguments = ExternalEditorDefaultArgument;
+                }
             }
         }
 
@@ -243,6 +323,11 @@ namespace VSCodeEditor
             {
                 m_ProjectGeneration.Sync();
             }
+
+            if (!m_ConfigGeneration.TskFileExists())
+            {
+                m_ConfigGeneration.Sync(true);
+            }
         }
 
         public void SyncIfNeeded(
@@ -260,12 +345,6 @@ namespace VSCodeEditor
                 addedFiles.Union(deletedFiles).Union(movedFiles).Union(movedFromFiles).ToList(),
                 importedFiles
             );
-
-            if (!m_ConfigGeneration.FlagHandler.ArgumentFlag.HasFlag(ArgumentFlag.Setup))
-            {
-                m_ConfigGeneration.Sync(true);
-                m_ConfigGeneration.FlagHandler.ToggleArgument(ArgumentFlag.Setup);
-            }
         }
 
         public void SyncAll()
@@ -293,17 +372,20 @@ namespace VSCodeEditor
                 $"{m_ProjectGeneration.ProjectDirectory}/{Path.GetFileName(m_ProjectGeneration.ProjectDirectory)}.code-workspace";
 
             string arguments;
-            if (Arguments != DefaultArgument && Arguments != WorkplaceDefaultArgument)
+            if (
+                EditorArguments != ExternalEditorDefaultArgument
+                && EditorArguments != ExternalEditorWorkplaceDefaultArgument
+            )
             {
                 arguments =
                     m_ProjectGeneration.ProjectDirectory != path
-                        ? CodeEditor.ParseArgument(Arguments, path, line, column)
+                        ? CodeEditor.ParseArgument(EditorArguments, path, line, column)
                         : workspacePath;
             }
             else
             {
                 arguments = m_ConfigGeneration.FlagHandler.ArgumentFlag.HasFlag(
-                    ArgumentFlag.Argument
+                    ArgumentFlag.EditorArgument
                 )
                     ? $@"""{workspacePath}"""
                     : $@"""{m_ProjectGeneration.ProjectDirectory}""";
