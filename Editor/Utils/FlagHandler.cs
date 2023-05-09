@@ -18,9 +18,10 @@ namespace VSCodeEditor
     public enum ConfigFlag
     {
         None = 0,
-        Workspace = 1,
-        OmniSharp = 2,
-        EditorConfig = 4,
+        VSCode = 1,
+        Workspace = 2,
+        OmniSharp = 4,
+        EditorConfig = 8,
     }
 
     [Flags]

@@ -14,11 +14,21 @@ namespace VSCodeEditor
     {
         const string vscode_argument = "vscode_arguments";
         const string vscode_extension = "vscode_userExtensions";
+
         string m_EditorArguments;
 
         bool m_ShowEditorSection = false;
         bool m_ShowConfigSection = false;
         bool m_ShowProjectSection = true;
+        bool m_ShowVSCodeSettingsSection = false;
+        bool m_ShowWorkspaceSection = false;
+        bool m_ShowOmniSharpSection = false;
+        bool m_ShowEditorConfigSection = false;
+
+        Vector2 m_VSCodeScrollPosition;
+        Vector2 m_WorkspaceScrollPosition;
+        Vector2 m_OmniSharpScrollPosition;
+        Vector2 m_EditorConfigScrollPosition;
 
         readonly IDiscovery m_Discoverability;
         readonly IGenerator m_ProjectGeneration;
@@ -88,6 +98,52 @@ namespace VSCodeEditor
             {
                 m_ShowProjectSection = value;
                 EditorPrefs.SetBool("vscode_showProjectSection", value);
+            }
+        }
+
+        bool ShowVSCodeSettingsSection
+        {
+            get =>
+                m_ShowVSCodeSettingsSection
+                || EditorPrefs.GetBool("vscode_showVSCodeSettingsSection", false);
+            set
+            {
+                m_ShowVSCodeSettingsSection = value;
+                EditorPrefs.SetBool("vscode_showVSCodeSettingsSection", value);
+            }
+        }
+
+        bool ShowWorkspaceSection
+        {
+            get =>
+                m_ShowWorkspaceSection || EditorPrefs.GetBool("vscode_showWorkspaceSection", false);
+            set
+            {
+                m_ShowWorkspaceSection = value;
+                EditorPrefs.SetBool("vscode_showWorkspaceSection", value);
+            }
+        }
+
+        bool ShowOmniSharpSection
+        {
+            get =>
+                m_ShowOmniSharpSection || EditorPrefs.GetBool("vscode_showOmniSharpSection", false);
+            set
+            {
+                m_ShowOmniSharpSection = value;
+                EditorPrefs.SetBool("vscode_showOmniSharpSection", value);
+            }
+        }
+
+        bool ShowEditorConfigSection
+        {
+            get =>
+                m_ShowEditorConfigSection
+                || EditorPrefs.GetBool("vscode_showEditorConfigSection", false);
+            set
+            {
+                m_ShowEditorConfigSection = value;
+                EditorPrefs.SetBool("vscode_showEditorConfigSection", value);
             }
         }
 
@@ -181,6 +237,8 @@ namespace VSCodeEditor
                 "Configure Editor Script Editor Arguments:"
             );
 
+            EditorGUILayout.EndFoldoutHeaderGroup();
+
             if (ShowEditorSection)
             {
                 EditorGUI.indentLevel++;
@@ -195,11 +253,14 @@ namespace VSCodeEditor
                     (handler, flag) => handler.ArgumentFlag.HasFlag(flag),
                     (handler, flag) => handler.ToggleArgument(flag)
                 );
-                RegenerateButton("Regenerate editor arguments");
+                RegenerateButton(
+                    m_ConfigGeneration.FlagHandler.ArgumentFlag.HasFlag(ArgumentFlag.EditorArgument)
+                        ? "Reset to Workspace default"
+                        : "Reset to default",
+                    "Regenerate editor arguments"
+                );
                 EditorGUI.indentLevel--;
             }
-
-            EditorGUILayout.EndFoldoutHeaderGroup();
         }
 
         void RenderConfigSection()
@@ -209,9 +270,27 @@ namespace VSCodeEditor
                 "Generate config files for:"
             );
 
+            EditorGUILayout.EndFoldoutHeaderGroup();
+
             if (ShowConfigSection)
             {
                 EditorGUI.indentLevel++;
+                FlagButton(
+                    ConfigFlag.VSCode,
+                    "VSCode Settings",
+                    "",
+                    (handler, flag) => handler.ConfigFlag.HasFlag(flag),
+                    (handler, flag) => handler.ToggleConfig(flag)
+                );
+
+                if (m_ConfigGeneration.FlagHandler.ConfigFlag.HasFlag(ConfigFlag.VSCode))
+                    RenderSettingsSection(
+                        ref m_ShowVSCodeSettingsSection,
+                        m_ConfigGeneration.VSCodeSettings,
+                        "VSCode",
+                        ref m_VSCodeScrollPosition
+                    );
+
                 FlagButton(
                     ConfigFlag.Workspace,
                     "Workspace",
@@ -219,6 +298,15 @@ namespace VSCodeEditor
                     (handler, flag) => handler.ConfigFlag.HasFlag(flag),
                     (handler, flag) => handler.ToggleConfig(flag)
                 );
+
+                if (m_ConfigGeneration.FlagHandler.ConfigFlag.HasFlag(ConfigFlag.Workspace))
+                    RenderSettingsSection(
+                        ref m_ShowWorkspaceSection,
+                        m_ConfigGeneration.WorkspaceSettings,
+                        "Workspace",
+                        ref m_WorkspaceScrollPosition
+                    );
+
                 FlagButton(
                     ConfigFlag.OmniSharp,
                     "OmniSharp",
@@ -226,6 +314,15 @@ namespace VSCodeEditor
                     (handler, flag) => handler.ConfigFlag.HasFlag(flag),
                     (handler, flag) => handler.ToggleConfig(flag)
                 );
+
+                if (m_ConfigGeneration.FlagHandler.ConfigFlag.HasFlag(ConfigFlag.OmniSharp))
+                    RenderSettingsSection(
+                        ref m_ShowOmniSharpSection,
+                        m_ConfigGeneration.OmniSharpSettings,
+                        "OmniSharp",
+                        ref m_OmniSharpScrollPosition
+                    );
+
                 FlagButton(
                     ConfigFlag.EditorConfig,
                     "EditorConfig",
@@ -234,11 +331,65 @@ namespace VSCodeEditor
                     (handler, flag) => handler.ToggleConfig(flag)
                 );
 
-                RegenerateButton("Regenerate config files");
+                if (m_ConfigGeneration.FlagHandler.ConfigFlag.HasFlag(ConfigFlag.EditorConfig))
+                    RenderSettingsSection(
+                        ref m_ShowEditorConfigSection,
+                        m_ConfigGeneration.EditorConfigSettings,
+                        "editorconfig",
+                        ref m_EditorConfigScrollPosition
+                    );
+
+                RegenerateButton("Regenerate", "Regenerate config files");
                 EditorGUI.indentLevel--;
             }
+        }
+
+        void RenderSettingsSection(
+            ref bool showSection,
+            string settings,
+            string sectionName,
+            ref Vector2 scrollPosition
+        )
+        {
+            showSection = EditorGUILayout.BeginFoldoutHeaderGroup(
+                showSection,
+                $"Configure {sectionName} Settings:"
+            );
 
             EditorGUILayout.EndFoldoutHeaderGroup();
+
+            if (showSection)
+            {
+                scrollPosition = EditorGUILayout.BeginScrollView(
+                    scrollPosition,
+                    GUILayout.Height(EditorGUIUtility.singleLineHeight * 7)
+                );
+                EditorGUI.BeginChangeCheck();
+                settings = EditorGUILayout.TextArea(settings, GUILayout.ExpandHeight(true));
+                EditorGUILayout.EndScrollView();
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    switch (sectionName)
+                    {
+                        case "VSCode":
+                            m_ConfigGeneration.VSCodeSettings = settings;
+                            break;
+                        case "Workspace":
+                            m_ConfigGeneration.WorkspaceSettings = settings;
+                            break;
+                        case "OmniSharp":
+                            m_ConfigGeneration.OmniSharpSettings = settings;
+                            break;
+                        case "editorconfig":
+                            m_ConfigGeneration.EditorConfigSettings = settings;
+                            break;
+                    }
+                }
+
+                RegenerateButton("Reset to default", $"Reset {sectionName} settings");
+                EditorGUILayout.Space();
+            }
         }
 
         void RenderProjectSection()
@@ -247,6 +398,8 @@ namespace VSCodeEditor
                 ShowProjectSection,
                 "Generate .csproj files for:"
             );
+
+            EditorGUILayout.EndFoldoutHeaderGroup();
 
             if (ShowProjectSection)
             {
@@ -300,11 +453,9 @@ namespace VSCodeEditor
                     (handler, flag) => handler.ProjectGenerationFlag.HasFlag(flag),
                     (handler, flag) => handler.ToggleProjectGeneration(flag)
                 );
-                RegenerateButton("Regenerate project files");
+                RegenerateButton("Regenerate", "Regenerate project files");
                 EditorGUI.indentLevel--;
             }
-
-            EditorGUILayout.EndFoldoutHeaderGroup();
         }
 
         void FlagButton<T>(
@@ -327,7 +478,7 @@ namespace VSCodeEditor
             }
         }
 
-        void RegenerateButton(string guiMessage)
+        void RegenerateButton(string guiMessage, string command = "")
         {
             var rect = EditorGUI.IndentedRect(
                 EditorGUILayout.GetControlRect(new GUILayoutOption[] { })
@@ -335,7 +486,7 @@ namespace VSCodeEditor
             rect.width = 252;
             if (GUI.Button(rect, new GUIContent(guiMessage)))
             {
-                switch (guiMessage)
+                switch (command)
                 {
                     case "Regenerate editor arguments":
                         if (
@@ -356,6 +507,18 @@ namespace VSCodeEditor
                         break;
                     case "Regenerate project files":
                         m_ProjectGeneration.Sync();
+                        break;
+                    case "Reset VSCode settings":
+                        m_ConfigGeneration.VSCodeSettings = "";
+                        break;
+                    case "Reset Workspace settings":
+                        m_ConfigGeneration.WorkspaceSettings = "";
+                        break;
+                    case "Reset OmniSharp settings":
+                        m_ConfigGeneration.OmniSharpSettings = "";
+                        break;
+                    case "Reset editorconfig settings":
+                        m_ConfigGeneration.EditorConfigSettings = "";
                         break;
                     default:
                         UnityEngine.Debug.LogError("Unknown button pressed");

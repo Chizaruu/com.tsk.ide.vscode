@@ -16,6 +16,10 @@ namespace VSCodeEditor
 {
     public interface IConfigGenerator
     {
+        string VSCodeSettings { get; set; }
+        string WorkspaceSettings { get; set; }
+        string OmniSharpSettings { get; set; }
+        string EditorConfigSettings { get; set; }
         string ProjectDirectory { get; }
         IFlagHandler FlagHandler { get; }
         bool TskFileExists();
@@ -24,7 +28,7 @@ namespace VSCodeEditor
 
     public class ConfigGeneration : IConfigGenerator
     {
-        const string k_SettingsJson =
+        const string k_DefaultSettingsJson =
             /*lang=json,strict*/
             @"{
     ""files.exclude"":
@@ -82,7 +86,7 @@ namespace VSCodeEditor
     }
 }";
 
-        const string k_WorkspaceJson =
+        const string k_DefaultWorkspaceJson =
             /*lang=json,strict*/
             @"{
 	""folders"": [
@@ -92,7 +96,7 @@ namespace VSCodeEditor
 	]
 }";
 
-        const string k_OmniSharpJson =
+        const string k_DefaultOmniSharpJson =
             /*lang=json,strict*/
             @"{
     ""RoslynExtensionsOptions"": {
@@ -107,7 +111,7 @@ namespace VSCodeEditor
     }
 }";
 
-        const string k_EditorConfig =
+        const string k_DefaultEditorConfig =
             @"# EditorConfig is awesome: http://EditorConfig.org
 
 # top-most EditorConfig file
@@ -123,6 +127,80 @@ trim_trailing_whitespace = true
         public string ProjectDirectory { get; }
         readonly string m_ProjectName;
         IFlagHandler IConfigGenerator.FlagHandler => m_FlagHandler;
+
+        string m_VSCodeSettings;
+        string m_WorkspaceSettings;
+        string m_OmniSharpSettings;
+        string m_EditorConfigSettings;
+
+        public string VSCodeSettings
+        {
+            get =>
+                m_VSCodeSettings ??= EditorPrefs.GetString(
+                    "vscode_settings",
+                    k_DefaultSettingsJson
+                );
+            set
+            {
+                if (value == "")
+                    value = k_DefaultSettingsJson;
+
+                m_VSCodeSettings = value;
+                EditorPrefs.SetString("vscode_settings", value);
+            }
+        }
+
+        public string WorkspaceSettings
+        {
+            get =>
+                m_WorkspaceSettings ??= EditorPrefs.GetString(
+                    "vscode_workspaceSettings",
+                    k_DefaultWorkspaceJson
+                );
+            set
+            {
+                if (value == "")
+                    value = k_DefaultWorkspaceJson;
+
+                m_WorkspaceSettings = value;
+                EditorPrefs.SetString("vscode_workspaceSettings", value);
+            }
+        }
+
+        public string OmniSharpSettings
+        {
+            get =>
+                m_OmniSharpSettings ??= EditorPrefs.GetString(
+                    "vscode_omnisharpSettings",
+                    k_DefaultOmniSharpJson
+                );
+            set
+            {
+                if (value == "")
+                    value = k_DefaultOmniSharpJson;
+
+                m_OmniSharpSettings = value;
+                EditorPrefs.SetString("vscode_omnisharpSettings", value);
+            }
+        }
+
+        public string EditorConfigSettings
+        {
+            get =>
+                m_EditorConfigSettings ??= EditorPrefs.GetString(
+                    "vscode_editorConfigSettings",
+                    k_DefaultEditorConfig
+                );
+            set
+            {
+                if (value == "")
+                    value = k_DefaultEditorConfig;
+
+                m_EditorConfigSettings = value;
+                EditorPrefs.SetString("vscode_editorConfigSettings", value);
+            }
+        }
+
         readonly IFlagHandler m_FlagHandler;
         readonly IFileIO m_FileIOProvider;
 
@@ -152,27 +230,31 @@ trim_trailing_whitespace = true
                 doNotDelete,
                 "This file is used by the TSK VSCode Editor package. Deleting it will cause your configuration to be overwritten."
             );
+
             return false;
         }
 
         public void Sync(bool canForce = false)
         {
-            WriteVSCodeSettingsFiles();
+            WriteVSCodeSettingsFiles(canForce);
             WriteWorkspaceFile(canForce);
             WriteOmniSharpConfigFile(canForce);
             WriteEditorConfigFile(canForce);
         }
 
-        void WriteVSCodeSettingsFiles()
+        void WriteVSCodeSettingsFiles(bool canForce = false)
         {
-            var vsCodeDirectory = Path.Combine(ProjectDirectory, ".vscode");
+            if (m_FlagHandler.ConfigFlag.HasFlag(ConfigFlag.VSCode) || canForce)
+            {
+                var vsCodeDirectory = Path.Combine(ProjectDirectory, ".vscode");
 
-            if (!m_FileIOProvider.Exists(vsCodeDirectory))
-                m_FileIOProvider.CreateDirectory(vsCodeDirectory);
+                if (!m_FileIOProvider.Exists(vsCodeDirectory))
+                    m_FileIOProvider.CreateDirectory(vsCodeDirectory);
 
-            var vsCodeSettingsJson = Path.Combine(vsCodeDirectory, "settings.json");
+                var vsCodeSettingsJson = Path.Combine(vsCodeDirectory, "settings.json");
 
-            m_FileIOProvider.WriteAllText(vsCodeSettingsJson, k_SettingsJson);
+                m_FileIOProvider.WriteAllText(vsCodeSettingsJson, VSCodeSettings);
+            }
         }
 
         void WriteWorkspaceFile(bool canForce = false)
@@ -184,7 +266,7 @@ trim_trailing_whitespace = true
                     $"{m_ProjectName}.code-workspace"
                 );
 
-                m_FileIOProvider.WriteAllText(workspaceFile, k_WorkspaceJson);
+                m_FileIOProvider.WriteAllText(workspaceFile, WorkspaceSettings);
             }
         }
 
@@ -194,7 +276,7 @@ trim_trailing_whitespace = true
             {
                 var omniSharpConfig = Path.Combine(ProjectDirectory, "omnisharp.json");
 
-                m_FileIOProvider.WriteAllText(omniSharpConfig, k_OmniSharpJson);
+                m_FileIOProvider.WriteAllText(omniSharpConfig, OmniSharpSettings);
             }
         }
 
@@ -204,7 +286,7 @@ trim_trailing_whitespace = true
             {
                 var editorConfig = Path.Combine(ProjectDirectory, ".editorconfig");
 
-                m_FileIOProvider.WriteAllText(editorConfig, k_EditorConfig);
+                m_FileIOProvider.WriteAllText(editorConfig, EditorConfigSettings);
             }
         }
     }
