@@ -453,6 +453,15 @@ namespace VSCodeEditor
                     (handler, flag) => handler.ProjectGenerationFlag.HasFlag(flag),
                     (handler, flag) => handler.ToggleProjectGeneration(flag)
                 );
+
+                EditorGUILayout.Space();
+                FlagButton(
+                    ProjectGenerationFlag.Analyzers,
+                    "Add Analyzers to all .csproj files",
+                    "",
+                    (handler, flag) => handler.ProjectGenerationFlag.HasFlag(flag),
+                    (handler, flag) => handler.ToggleProjectGeneration(flag)
+                );
                 RegenerateButton("Regenerate", "Regenerate project files");
                 EditorGUI.indentLevel--;
             }

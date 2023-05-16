@@ -567,15 +567,30 @@ namespace VSCodeEditor
                 project.Add(assemblyRefItemGroup);
             }
 
-            var analyzersRefItemGroup = new XElement("ItemGroup");
+            // Add the analyzers reference to only Assets folder assemblies or to all assemblies if ProjectGenerationFlag.Analyzers is set to true
+            if (
+                m_AssemblyNameProvider.ProjectGenerationFlag.HasFlag(
+                    ProjectGenerationFlag.Analyzers
+                ) || CheckIfAnalyzerIsAllowedOnCSProj(assembly)
+            )
+            {
+                var analyzersRefItemGroup = new XElement("ItemGroup");
 
-            analyzersRefItemGroup.Add(
-                AddNugetPackageReference("Microsoft.Unity.Analyzers", "*", true)
-            );
+                analyzersRefItemGroup.Add(
+                    AddNugetPackageReference("Microsoft.Unity.Analyzers", "*", true)
+                );
 
-            project.Add(analyzersRefItemGroup);
+                project.Add(analyzersRefItemGroup);
+            }
 
             return document.ToString();
+        }
+
+        private bool CheckIfAnalyzerIsAllowedOnCSProj(Assembly assembly)
+        {
+            return assembly.sourceFiles.Any(
+                x => x.StartsWith("Assets", StringComparison.InvariantCultureIgnoreCase)
+            );
         }
 
         private XElement AddNugetPackageReference(string nugetPackageId, string nugetPackageVersion)

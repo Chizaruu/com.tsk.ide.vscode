@@ -36,6 +36,7 @@ namespace VSCodeEditor
         Unknown = 32,
         PlayerAssemblies = 64,
         LocalTarBall = 128,
+        Analyzers = 256,
     }
 
     public interface IFlagHandler
