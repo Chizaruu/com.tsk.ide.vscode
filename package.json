@@ -2,7 +2,7 @@
     "name": "com.tsk.ide.vscode",
     "displayName": "TSK VSCode Editor",
     "description": "Unofficial code editor integration for supporting Visual Studio Code as code editor for Unity. Adds support for generating csproj files for intellisense purposes, auto discovery of installations, etc.",
-    "version": "1.3.6",
+    "version": "1.3.7",
     "unity": "2021.3",
     "dependencies": {},
     "author": {
