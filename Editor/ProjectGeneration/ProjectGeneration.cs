@@ -20,6 +20,7 @@ namespace VSCodeEditor
         void Sync();
         string SolutionFile();
         string ProjectDirectory { get; }
+        string CSharpProjFilesDirectory { get; }
         IAssemblyNameProvider AssemblyNameProvider { get; }
         bool SolutionExists();
     }
@@ -70,7 +71,10 @@ namespace VSCodeEditor
 
         string[] m_ProjectSupportedExtensions = Array.Empty<string>();
 
+        const string m_TargetCSharpProjFileFolder = "/CSharpProjFiles/";
+
         public string ProjectDirectory { get; }
+        public string CSharpProjFilesDirectory => ProjectDirectory + m_TargetCSharpProjFileFolder;
         IAssemblyNameProvider IGenerator.AssemblyNameProvider => m_AssemblyNameProvider;
 
         readonly string m_ProjectName;
@@ -100,6 +104,12 @@ namespace VSCodeEditor
             m_AssemblyNameProvider = assemblyNameProvider;
             m_FileIOProvider = fileIO;
             m_GUIDProvider = guidGenerator;
+
+            //If CSProj files directory does not exist, create it.
+            if (!m_FileIOProvider.DirectoryExists(CSharpProjFilesDirectory))
+            {
+                m_FileIOProvider.CreateDirectory(CSharpProjFilesDirectory);
+            }
         }
 
         /// <summary>
@@ -786,7 +796,7 @@ namespace VSCodeEditor
         {
             var fileBuilder = new StringBuilder(assembly.name);
             _ = fileBuilder.Append(".csproj");
-            return Path.Combine(ProjectDirectory, fileBuilder.ToString());
+            return Path.Combine(CSharpProjFilesDirectory, fileBuilder.ToString());
         }
 
         public string SolutionFile()
@@ -927,8 +937,8 @@ namespace VSCodeEditor
         }
 
         /// <summary>
-        /// Get a Project("{guid}") = "MyProject", "MyProject.csproj", "{projectGuid}"
-        /// entry for each relevant language
+        /// Get a Project("{guid}") = "MyProject", "{CSharpProjFilesDirectory}/MyProject.csproj", "{projectGuid}"
+        /// /// entry for each relevant language
         /// </summary>
         string GetProjectEntries(IEnumerable<Assembly> assemblies)
         {
@@ -938,7 +948,7 @@ namespace VSCodeEditor
                         m_SolutionProjectEntryTemplate,
                         SolutionGuid(i),
                         i.name,
-                        Path.GetFileName(ProjectFile(i)),
+                        CSharpProjFilesDirectory + Path.GetFileName(ProjectFile(i)),
                         ProjectGuid(i.name)
                     )
             );

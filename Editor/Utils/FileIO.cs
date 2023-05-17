@@ -8,13 +8,11 @@ namespace VSCodeEditor
     public interface IFileIO
     {
         bool Exists(string fileName);
-
         string ReadAllText(string fileName);
         void WriteAllText(string fileName, string content);
-
         void Copy(string sourceFileName, string destFileName, bool overwrite);
-
         void CreateDirectory(string pathName);
+        bool DirectoryExists(string pathName);
         string EscapedRelativePathFor(string file, string projectDirectory);
     }
 
@@ -43,6 +41,11 @@ namespace VSCodeEditor
         public void CreateDirectory(string pathName)
         {
             _ = Directory.CreateDirectory(pathName);
+        }
+
+        public bool DirectoryExists(string pathName)
+        {
+            return Directory.Exists(pathName);
         }
 
         public string EscapedRelativePathFor(string file, string projectDirectory)
