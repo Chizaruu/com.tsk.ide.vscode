@@ -986,7 +986,7 @@ namespace VSCodeEditor
         {
             // Generate the nuget.json file for each csproj by getting each csproj as a string and then calling dotnet restore
             var csprojFiles = Directory.GetFiles(
-                ProjectDirectory,
+                CSharpProjFilesDirectory,
                 "*.csproj",
                 SearchOption.AllDirectories
             );
