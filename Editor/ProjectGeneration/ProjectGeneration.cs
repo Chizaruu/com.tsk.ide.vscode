@@ -20,7 +20,7 @@ namespace VSCodeEditor
         void Sync();
         string SolutionFile();
         string ProjectDirectory { get; }
-        string CSharpProjFilesDirectory { get; }
+        string CSharpProjFoldersDirectory { get; }
         IAssemblyNameProvider AssemblyNameProvider { get; }
         bool SolutionExists();
     }
@@ -71,10 +71,11 @@ namespace VSCodeEditor
 
         string[] m_ProjectSupportedExtensions = Array.Empty<string>();
 
-        const string m_TargetCSharpProjFileFolder = "/CSharpProjFiles/";
+        const string m_TargetCSharpProjFolders = "CSharpProjFolders";
 
         public string ProjectDirectory { get; }
-        public string CSharpProjFilesDirectory => ProjectDirectory + m_TargetCSharpProjFileFolder;
+        public string CSharpProjFoldersDirectory =>
+            Path.Combine(ProjectDirectory, m_TargetCSharpProjFolders);
         IAssemblyNameProvider IGenerator.AssemblyNameProvider => m_AssemblyNameProvider;
 
         readonly string m_ProjectName;
@@ -105,10 +106,9 @@ namespace VSCodeEditor
             m_FileIOProvider = fileIO;
             m_GUIDProvider = guidGenerator;
 
-            //If CSProj files directory does not exist, create it.
-            if (!m_FileIOProvider.DirectoryExists(CSharpProjFilesDirectory))
+            if (!m_FileIOProvider.DirectoryExists(CSharpProjFoldersDirectory))
             {
-                m_FileIOProvider.CreateDirectory(CSharpProjFilesDirectory);
+                m_FileIOProvider.CreateDirectory(CSharpProjFoldersDirectory);
             }
         }
 
@@ -796,7 +796,18 @@ namespace VSCodeEditor
         {
             var fileBuilder = new StringBuilder(assembly.name);
             _ = fileBuilder.Append(".csproj");
-            return Path.Combine(CSharpProjFilesDirectory, fileBuilder.ToString());
+
+            string csharpProjectFolderPath = Path.Combine(
+                CSharpProjFoldersDirectory,
+                assembly.name
+            );
+
+            if (!m_FileIOProvider.DirectoryExists(csharpProjectFolderPath))
+            {
+                m_FileIOProvider.CreateDirectory(csharpProjectFolderPath);
+            }
+
+            return Path.Combine(csharpProjectFolderPath, fileBuilder.ToString());
         }
 
         public string SolutionFile()
@@ -937,21 +948,28 @@ namespace VSCodeEditor
         }
 
         /// <summary>
-        /// Get a Project("{guid}") = "MyProject", "{CSharpProjFilesDirectory}/MyProject.csproj", "{projectGuid}"
+        /// Get a Project("{guid}") = "MyProject", "{m_TargetCSharpProjFolders}/{projectFileName}/MyProject.csproj", "{projectGuid}"
         /// /// entry for each relevant language
         /// </summary>
         string GetProjectEntries(IEnumerable<Assembly> assemblies)
         {
-            var projectEntries = assemblies.Select(
-                i =>
-                    string.Format(
-                        m_SolutionProjectEntryTemplate,
-                        SolutionGuid(i),
-                        i.name,
-                        CSharpProjFilesDirectory + Path.GetFileName(ProjectFile(i)),
-                        ProjectGuid(i.name)
-                    )
-            );
+            var projectEntries = assemblies.Select(i =>
+            {
+                var projectName = Path.GetFileName(ProjectFile(i));
+
+                var projectFileName = projectName.Substring(
+                    0,
+                    projectName.Length - GetProjectExtension().Length
+                );
+
+                return string.Format(
+                    m_SolutionProjectEntryTemplate,
+                    SolutionGuid(i),
+                    i.name,
+                    $"{m_TargetCSharpProjFolders}/{projectFileName}/{projectName}",
+                    ProjectGuid(i.name)
+                );
+            });
 
             return string.Join(k_WindowsNewline, projectEntries.ToArray());
         }
@@ -984,32 +1002,14 @@ namespace VSCodeEditor
 
         void GenerateNugetJsonSourceFiles()
         {
-            // Generate the nuget.json file for each csproj by getting each csproj as a string and then calling dotnet restore
-            var csprojFiles = Directory.GetFiles(
-                CSharpProjFilesDirectory,
-                "*.csproj",
-                SearchOption.AllDirectories
-            );
-
-            foreach (var csprojFile in csprojFiles)
-            {
-                //Run dotnet restore on the csproj file to generate the nuget.json file
-                RunDotnetProcess($"restore \"{csprojFile}\"");
-            }
-        }
-
-        void RunDotnetProcess(string arguments)
-        {
             System.Diagnostics.Process process = new();
 
             System.Diagnostics.ProcessStartInfo processStartInfo =
-                new()
+                new("dotnet", "restore")
                 {
-                    FileName = "dotnet",
-                    Arguments = arguments,
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
-                    CreateNoWindow = true
+                    CreateNoWindow = true,
                 };
             process.StartInfo = processStartInfo;
 
