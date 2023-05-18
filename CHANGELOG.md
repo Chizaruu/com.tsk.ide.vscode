@@ -1,5 +1,20 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.3.9] - 2023-05-18
+
+- .csproj files are separated into their own folders within a main folder called "CSProjFolders" - Thanks @frarees
+- The ProjectReference element now includes a direct path to the file.
+  - Project element added
+  - Name element added
+- Compile element now includes a direct path to the file.
+- GenerateAssemblyInfo property set to false
+- Start of `dotnet build` support
+
+## [1.3.7] - 2023-05-16
+
+- Added the option to disable adding Analyzers to all packages
+  - This means that it will only be added to .csproj files originating from the Assets Folder.
+
 ## [1.3.6] - 2023-05-10
 
 - [Added config section to Externals Tools](https://github.com/Chizaruu/com.tsk.ide.vscode/commit/8da03f5885c268eaecdfd904e6a324be9bf9b82a)
