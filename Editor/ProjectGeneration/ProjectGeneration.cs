@@ -1022,7 +1022,7 @@ namespace VSCodeEditor
                 new()
                 {
                     FileName = "dotnet",
-                    Arguments = "restore",
+                    Arguments = "build",
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
