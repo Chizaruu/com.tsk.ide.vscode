@@ -406,10 +406,11 @@ namespace VSCodeEditor
                     }
 
                     var noneElement = new XElement("None");
-                    noneElement.SetAttributeValue(
-                        "Include",
-                        m_FileIOProvider.EscapedRelativePathFor(asset, ProjectDirectory)
-                    );
+
+                    var fullFile = m_FileIOProvider.EscapedRelativePathFor(asset, ProjectDirectory);
+
+                    fullFile = Path.Combine(ProjectDirectory, fullFile);
+                    noneElement.SetAttributeValue("Include", fullFile);
                     projectBuilder.Add(noneElement);
                 }
             }
@@ -479,6 +480,7 @@ namespace VSCodeEditor
         <PropertyGroup>
             <TargetFramework>netstandard2.1</TargetFramework>
             <DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
+            <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         </PropertyGroup>
         <PropertyGroup>
             <DefaultItemExcludes>$(DefaultItemExcludes);Library/;**/*.*</DefaultItemExcludes>
@@ -514,7 +516,10 @@ namespace VSCodeEditor
 
                 foreach (var file in assembly.sourceFiles)
                 {
+                    // It should have the entire path to the source file
                     var fullFile = m_FileIOProvider.EscapedRelativePathFor(file, ProjectDirectory);
+
+                    fullFile = Path.Combine(ProjectDirectory, fullFile);
                     itemGroup.Add(
                         new XElement("Compile", new XAttribute("Include", $"{fullFile}"))
                     );
@@ -568,13 +573,14 @@ namespace VSCodeEditor
                 {
                     var packRefElement = new XElement(
                         "ProjectReference",
-                        new XAttribute("Include", 
-                        // It should have the entire path to the project file
-                        Path.Combine(
-                            CSharpProjFoldersDirectory,
-                            reference.name,
-                            reference.name + GetProjectExtension()
-                        )
+                        new XAttribute(
+                            "Include",
+                            // It should have the entire path to the project file
+                            Path.Combine(
+                                CSharpProjFoldersDirectory,
+                                reference.name,
+                                reference.name + GetProjectExtension()
+                            )
                         ),
                         new XElement("Project", $"{ProjectGuid(reference.name)}"),
                         new XElement("Name", reference.name + GetProjectExtension())
@@ -1019,7 +1025,7 @@ namespace VSCodeEditor
                     Arguments = "restore",
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
-                    CreateNoWindow = false
+                    CreateNoWindow = true
                 };
 
             process.StartInfo = processStartInfo;
