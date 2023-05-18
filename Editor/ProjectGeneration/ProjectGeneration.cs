@@ -1005,17 +1005,18 @@ namespace VSCodeEditor
             System.Diagnostics.Process process = new();
 
             System.Diagnostics.ProcessStartInfo processStartInfo =
-                new("dotnet", "restore")
+                new()
                 {
+                    FileName = "dotnet",
+                    Arguments = "restore",
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
-                    CreateNoWindow = true,
+                    CreateNoWindow = false
                 };
+
             process.StartInfo = processStartInfo;
 
-            _ = process.Start();
-
-            process.WaitForExit();
+            process.Start();
 
             process.Close();
         }
