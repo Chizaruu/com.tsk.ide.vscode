@@ -568,7 +568,16 @@ namespace VSCodeEditor
                 {
                     var packRefElement = new XElement(
                         "ProjectReference",
-                        new XAttribute("Include", reference.name + GetProjectExtension())
+                        new XAttribute("Include", 
+                        // It should have the entire path to the project file
+                        Path.Combine(
+                            CSharpProjFoldersDirectory,
+                            reference.name,
+                            reference.name + GetProjectExtension()
+                        )
+                        ),
+                        new XElement("Project", $"{ProjectGuid(reference.name)}"),
+                        new XElement("Name", reference.name + GetProjectExtension())
                     );
 
                     assemblyRefItemGroup.Add(packRefElement);
@@ -577,7 +586,6 @@ namespace VSCodeEditor
                 project.Add(assemblyRefItemGroup);
             }
 
-            // Add the analyzers reference to only Assets folder assemblies or to all assemblies if ProjectGenerationFlag.Analyzers is set to true
             if (
                 m_AssemblyNameProvider.ProjectGenerationFlag.HasFlag(
                     ProjectGenerationFlag.Analyzers
