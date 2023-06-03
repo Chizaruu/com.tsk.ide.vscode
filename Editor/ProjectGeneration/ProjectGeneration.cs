@@ -1016,23 +1016,94 @@ namespace VSCodeEditor
 
         void GenerateNugetJsonSourceFiles()
         {
-            System.Diagnostics.Process process = new();
+            string dotnetCommand = GetDotnetCommand();
 
-            System.Diagnostics.ProcessStartInfo processStartInfo =
-                new()
+            if (dotnetCommand == null)
+            {
+                Debug.LogError("Could not find a compatible dotnet command.");
+                return;
+            }
+
+            using (System.Diagnostics.Process process = new System.Diagnostics.Process())
+            {
+                System.Diagnostics.ProcessStartInfo processStartInfo =
+                    new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = dotnetCommand,
+                        Arguments = "-c \"dotnet build\"",
+                        RedirectStandardOutput = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+
+                process.StartInfo = processStartInfo;
+                process.Start();
+                process.WaitForExit();
+            }
+        }
+
+        string GetDotnetCommand()
+        {
+            string[] possibleCommands = null;
+
+            switch (Application.platform)
+            {
+                case RuntimePlatform.WindowsEditor:
+                    return "dotnet";
+                case RuntimePlatform.LinuxEditor:
+                case RuntimePlatform.OSXEditor:
+                    possibleCommands = new string[]
+                    {
+                        "/bin/zsh",
+                        "/bin/bash",
+                        "/bin/ksh",
+                        "/bin/csh",
+                        "/bin/dash",
+                        "/bin/fish",
+                        "/bin/sh"
+                    };
+                    break;
+                default:
+                    throw new PlatformNotSupportedException(
+                        $"Platform {Application.platform} not supported."
+                    );
+            }
+
+            foreach (string command in possibleCommands)
+            {
+                using (System.Diagnostics.Process process = new System.Diagnostics.Process())
                 {
-                    FileName = "dotnet",
-                    Arguments = "build",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
+                    System.Diagnostics.ProcessStartInfo processStartInfo =
+                        new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = command,
+                            Arguments = "-c \"echo Available\"",
+                            RedirectStandardOutput = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
 
-            process.StartInfo = processStartInfo;
+                    process.StartInfo = processStartInfo;
+                    try
+                    {
+                        process.Start();
 
-            process.Start();
+                        string output = process.StandardOutput.ReadToEnd();
+                        process.WaitForExit();
 
-            process.Close();
+                        if (output.Contains("Available"))
+                        {
+                            return command;
+                        }
+                    }
+                    catch (System.ComponentModel.Win32Exception)
+                    {
+                        Debug.Log($"Command '{command}' not found or not accessible.");
+                    }
+                }
+            }
+
+            return null; // No compatible command found
         }
     }
 
