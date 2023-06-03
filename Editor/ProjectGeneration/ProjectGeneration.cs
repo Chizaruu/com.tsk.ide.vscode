@@ -1100,6 +1100,10 @@ namespace VSCodeEditor
                     {
                         Debug.Log($"Command '{command}' not found or not accessible.");
                     }
+                    finally
+                    {
+                        process.Close();
+                    }
                 }
             }
 
