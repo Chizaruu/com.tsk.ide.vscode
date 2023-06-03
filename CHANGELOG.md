@@ -1,5 +1,9 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.4.0] - 2023-06-04
+
+- Refactored code to improve platform compatibility
+
 ## [1.3.9] - 2023-05-18
 
 - .csproj files are separated into their own folders within a main folder called "CSProjFolders" - Thanks @frarees
