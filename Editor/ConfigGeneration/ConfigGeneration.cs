@@ -83,7 +83,10 @@ namespace VSCodeEditor
         ""ProjectSettings/"":true,
         ""temp/"":true,
         ""Temp/"":true
-    }
+    },
+    ""omnisharp.useModernNet"": true,
+    ""omnisharp.sdkIncludePrereleases"": false,
+    ""omnisharp.organizeImportsOnFormat"": true,
 }";
 
         const string k_DefaultWorkspaceJson =
@@ -100,14 +103,17 @@ namespace VSCodeEditor
             /*lang=json,strict*/
             @"{
     ""RoslynExtensionsOptions"": {
-        ""enableRoslynAnalyzers"": true,
+        ""EnableAnalyzersSupport"": true,
+        ""AnalyzeOpenDocumentsOnly"": true,
+        ""DocumentAnalysisTimeoutMs"": 600000
+    },
+    ""FormattingOptions"": {
         ""enableEditorConfigSupport"": true,
-        ""analyzeOpenDocumentsOnly"": true,
-        ""sdkIncludePrereleases"": false,
-        ""organizeImportsOnFormat"": true,
-        ""threadsToUseForAnalyzers"": true,
-        ""useModernNet"": true,
-        ""documentAnalysisTimeoutMs"": 600000
+    },
+    ""RenameOptions"": {
+        ""RenameInComments"": true,
+        ""RenameOverloads"": true,
+        ""RenameInStrings"": true
     }
 }";
 
