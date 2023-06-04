@@ -18,6 +18,7 @@ namespace VSCodeEditor
         string m_EditorArguments;
 
         bool m_ShowEditorSection = false;
+        bool m_ShowExtensionsSection = false;
         bool m_ShowConfigSection = false;
         bool m_ShowProjectSection = true;
         bool m_ShowVSCodeSettingsSection = false;
@@ -78,6 +79,18 @@ namespace VSCodeEditor
             {
                 m_ShowEditorSection = value;
                 EditorPrefs.SetBool("vscode_showEditorSection", value);
+            }
+        }
+
+        bool ShowExtensionsSection
+        {
+            get =>
+                m_ShowExtensionsSection
+                || EditorPrefs.GetBool("vscode_showExtensionsSection", false);
+            set
+            {
+                m_ShowExtensionsSection = value;
+                EditorPrefs.SetBool("vscode_showExtensionsSection", value);
             }
         }
 
@@ -151,7 +164,7 @@ namespace VSCodeEditor
         {
             get
             {
-                var customExtensions = new[] { "json", "asmdef", "log" };
+                var customExtensions = new[] { "json", "asmdef", "log", "jslib" };
                 return EditorSettings.projectGenerationBuiltinExtensions
                     .Concat(EditorSettings.projectGenerationUserExtensions)
                     .Concat(customExtensions)
@@ -221,13 +234,9 @@ namespace VSCodeEditor
         public void OnGUI()
         {
             RenderEditorSection();
+            RenderExtensionsSection();
             RenderConfigSection();
             RenderProjectSection();
-
-            HandledExtensionsString = EditorGUILayout.TextField(
-                new GUIContent("Extensions handled: "),
-                HandledExtensionsString
-            );
         }
 
         void RenderEditorSection()
@@ -259,6 +268,27 @@ namespace VSCodeEditor
                         : "Reset to default",
                     "Regenerate editor arguments"
                 );
+                EditorGUI.indentLevel--;
+            }
+        }
+
+        void RenderExtensionsSection()
+        {
+            ShowExtensionsSection = EditorGUILayout.BeginFoldoutHeaderGroup(
+                ShowExtensionsSection,
+                "Configure Extensions Handled by VSCode:"
+            );
+
+            EditorGUILayout.EndFoldoutHeaderGroup();
+
+            if (ShowExtensionsSection)
+            {
+                EditorGUI.indentLevel++;
+                HandledExtensionsString = EditorGUILayout.TextField(
+                    new GUIContent("Extensions handled: "),
+                    HandledExtensionsString
+                );
+                RegenerateButton("Reset to default", "Regenerate default extensions");
                 EditorGUI.indentLevel--;
             }
         }
@@ -510,6 +540,9 @@ namespace VSCodeEditor
                         {
                             EditorArguments = ExternalEditorDefaultArgument;
                         }
+                        break;
+                    case "Regenerate default extensions":
+                        HandledExtensionsString = string.Join(";", DefaultExtensions);
                         break;
                     case "Regenerate config files":
                         m_ConfigGeneration.Sync();
