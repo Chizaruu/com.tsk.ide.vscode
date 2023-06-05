@@ -1,5 +1,11 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.4.1] - 2023-06-05
+
+- Refactored configuration defaults and removed redundant options from omnisharp.json. - Thanks @ershn
+- Added support for renaming methods and classes using Omnisharp.
+- Updated settings.json to correctly utilize useModernNet, sdkIncludePrereleases, and organizeImportsOnFormat.
+
 ## [1.4.0] - 2023-06-04
 
 - Refactored code to improve platform compatibility
