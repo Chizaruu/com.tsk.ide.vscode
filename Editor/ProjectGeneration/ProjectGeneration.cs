@@ -1096,9 +1096,9 @@ namespace VSCodeEditor
                             return command;
                         }
                     }
-                    catch (System.ComponentModel.Win32Exception)
+                    catch (Exception)
                     {
-                        Debug.Log($"Command '{command}' not found or not accessible.");
+                        continue;
                     }
                     finally
                     {
@@ -1107,6 +1107,7 @@ namespace VSCodeEditor
                 }
             }
 
+            Debug.Log($"Could not find a compatible dotnet command.");
             return null; // No compatible command found
         }
     }
