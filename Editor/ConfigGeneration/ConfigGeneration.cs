@@ -108,7 +108,7 @@ namespace VSCodeEditor
         ""DocumentAnalysisTimeoutMs"": 600000
     },
     ""FormattingOptions"": {
-        ""enableEditorConfigSupport"": true,
+        ""enableEditorConfigSupport"": true
     },
     ""RenameOptions"": {
         ""RenameInComments"": true,
