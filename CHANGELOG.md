@@ -2,6 +2,7 @@
 
 ## [1.4.1] - 2023-06-05
 
+- Added .jslib to default extensions for VSCode.
 - Refactored configuration defaults and removed redundant options from omnisharp.json. - Thanks @ershn
 - Added support for renaming methods and classes using Omnisharp.
 - Updated settings.json to correctly utilize useModernNet, sdkIncludePrereleases, and organizeImportsOnFormat.
