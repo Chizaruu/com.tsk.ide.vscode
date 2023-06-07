@@ -937,7 +937,7 @@ namespace VSCodeEditor
         string SolutionText(IEnumerable<Assembly> assemblies)
         {
             var fileVersion = "11.00";
-            var vsVersion = "2020";
+            var vsVersion = "2022";
 
             var relevantAssemblies = RelevantAssembliesForMode(assemblies);
             string projectEntries = GetProjectEntries(relevantAssemblies);
