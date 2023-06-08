@@ -1039,79 +1039,13 @@ namespace VSCodeEditor
 
         string GetDotnetCommand()
         {
-            string defaultCommand = "dotnet";
-            string storedCommand = EditorPrefs.GetString("dotnet-command");
-            if (!string.IsNullOrEmpty(storedCommand))
-            {
-                Debug.Log($"Using stored dotnet command: {storedCommand}");
-                return storedCommand;
-            }
-
-            string[] possibleCommands =
-            {
-                "/bin/zsh",
-                "/usr/bin/zsh",
-                "/bin/bash",
-                "/usr/bin/bash",
-                "/bin/ksh",
-                "/usr/bin/ksh",
-                "/bin/csh",
-                "/usr/bin/csh",
-                "/bin/dash",
-                "/usr/bin/dash",
-                "/bin/fish",
-                "/usr/bin/fish"
-            };
-
-            bool IsCommandAvailable(string command)
-            {
-                using var process = new System.Diagnostics.Process();
-                var processStartInfo = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = command,
-                    Arguments = "-c \"echo Available\"",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                process.StartInfo = processStartInfo;
-                try
-                {
-                    process.Start();
-                    string output = process.StandardOutput.ReadToEnd();
-                    process.WaitForExit();
-
-                    if (output.Contains("Available"))
-                    {
-                        Debug.Log($"Found a compatible dotnet command: {command}");
-                        EditorPrefs.SetString("dotnet-command", command);
-                        return true;
-                    }
-                }
-                catch (Exception)
-                {
-                    // Ignore exceptions and continue to the next command
-                }
-                finally
-                {
-                    process.Dispose();
-                }
-                return false;
-            }
-
-            foreach (string command in possibleCommands)
-            {
-                if (IsCommandAvailable(command))
-                {
-                    return command;
-                }
-            }
-
-            Debug.Log(
-                $"Could not find a compatible dotnet command. Resolving to default: {defaultCommand}"
-            );
-            return defaultCommand;
+#if UNITY_EDITOR_WIN
+            return "dotnet";
+#elif UNITY_EDITOR_LINUX
+            return "/bin/bash";
+#elif UNITY_EDITOR_OSX
+            return "/bin/zsh";
+#endif
         }
     }
 
