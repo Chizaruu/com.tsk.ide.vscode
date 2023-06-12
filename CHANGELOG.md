@@ -1,5 +1,9 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.4.2] - 2023-06-13
+
+- Restrict Shell Compatibility for Project Generation's Dotnet Build (Mac/Linux)
+
 ## [1.4.1] - 2023-06-05
 
 - Added .jslib to default extensions for VSCode.
