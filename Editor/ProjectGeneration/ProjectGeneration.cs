@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.Compilation;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -499,10 +500,13 @@ namespace VSCodeEditor
             var project = document.Element("Project");
             var targetFrameWork = project.Elements().First().Element("TargetFramework");
 
-            var group = BuildPipeline.GetBuildTargetGroup(
+            var targetGroup = BuildPipeline.GetBuildTargetGroup(
                 EditorUserBuildSettings.activeBuildTarget
             );
-            var netSettings = PlayerSettings.GetApiCompatibilityLevel(group);
+
+            var namedBuildTarget = NamedBuildTarget.FromBuildTargetGroup(targetGroup);
+
+            var netSettings = PlayerSettings.GetApiCompatibilityLevel(namedBuildTarget);
 
             targetFrameWork.Value = GetTargetFrameworkVersion(netSettings);
 
