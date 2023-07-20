@@ -119,6 +119,17 @@ After installing the package, follow these steps to regenerate the .csproj files
 
 Please note that any previously existing configuration files will be overwritten during the package installation.
 
+These assembly project files will be generated under `{ProjectDirectory}/CSharpProjFolders`.
+
+As these files are auto-generated, they should be ignored by source control.
+
+Example .gitignore line:
+
+```
+# TSK VSCode
+/CSharpProjFolders/*
+```
+
 ### Extras 
 
 - To enable grammar and highlighting for jslib files, install the [jslib-for-unity](https://github.com/TheSleepyKoala/jslib-for-unity) package.
