@@ -119,11 +119,11 @@ After installing the package, follow these steps to regenerate the .csproj files
 
 Please note that any previously existing configuration files will be overwritten during the package installation.
 
-These assembly project files will be generated under `{ProjectDirectory}/CSharpProjFolders`.
+The assembly project files will be auto-generated in {ProjectDirectory}/CSharpProjFolders.
 
-As these files are auto-generated, they should be ignored by source control.
+To ignore these auto-generated files, add the following line to your .gitignore:
 
-Example .gitignore line:
+Example .gitignore lines:
 
 ```
 # TSK VSCode
