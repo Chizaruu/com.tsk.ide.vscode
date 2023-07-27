@@ -1031,7 +1031,6 @@ namespace VSCodeEditor
             {
                 FileName = dotnetCommand,
                 Arguments = "-c \"dotnet build\"",
-                RedirectStandardOutput = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
