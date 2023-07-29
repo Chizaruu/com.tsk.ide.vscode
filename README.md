@@ -47,19 +47,18 @@ Furthermore, the package introduces a dedicated configuration section within Ext
 
 ### Windows Only
 
-- Logout or restart Windows to allow changes to `%PATH%` to take effect.
-- The C# extension no longer ships with Microsoft Build Tools, so they must be installed manually.
-    - Download the [Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022).
-    - Install the .NET desktop build tools workload. No other components are required.
+-   Logout or restart Windows to allow changes to `%PATH%` to take effect.
+-   The C# extension no longer ships with Microsoft Build Tools, so they must be installed manually.
+    -   Download the [Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022).
+    -   Install the .NET desktop build tools workload. No other components are required.
 
 ### MacOS Only
 
-- To avoid seeing "Some projects have trouble loading. Please review the output for more details", make sure to install the latest stable [Mono](https://www.mono-project.com/download/) release.
-- If you aren't using C# Devkit, do the following:
+-   To avoid seeing "Some projects have trouble loading. Please review the output for more details", make sure to install the latest stable [Mono](https://www.mono-project.com/download/) release.
+-   If you aren't using C# Devkit, do the following:
     1. In your Visual Studio Code (VS Code) user settings, ensure that the configuration `"omnisharp.useModernNet":` is set to `false`. This configuration must be in place to prevent VS Code from utilizing the Mono version included in the official C# extension (specifically, version 6.0.X as of the latest release).
     2. Upon installing the latest version of Mono directly, set the following configuration value:
-    `"omnisharp.monoPath": "/Library/Frameworks/Mono.framework/Versions/Current"`
-        - Ensure you replace the provided path with the location where you installed Mono. By doing so, VS Code will strictly utilize the newly installed version of Mono for all operations.
+       `"omnisharp.monoPath": "/Library/Frameworks/Mono.framework/Versions/Current"` - Ensure you replace the provided path with the location where you installed Mono. By doing so, VS Code will strictly utilize the newly installed version of Mono for all operations.
 
 ## Install via Package Manager
 
@@ -89,7 +88,7 @@ Please follow the instrustions:
 -   Click +
 -   Select Add package by name... or Add package from git URL...
 -   Paste com.tsk.ide.vscode into name
--   Paste 1.4.2 into version
+-   Paste 1.4.3 into version
 -   Click Add
 
 Alternatively, merge the snippet to Packages/manifest.json
@@ -104,7 +103,7 @@ Alternatively, merge the snippet to Packages/manifest.json
         }
     ],
     "dependencies": {
-        "com.tsk.ide.vscode": "1.4.2"
+        "com.tsk.ide.vscode": "1.4.3"
     }
 }
 ```
@@ -130,9 +129,9 @@ Example .gitignore lines:
 /CSharpProjFolders/*
 ```
 
-### Extras 
+### Extras
 
-- To enable grammar and highlighting for jslib files, install the [jslib-for-unity](https://github.com/TheSleepyKoala/jslib-for-unity) package.
+-   To enable grammar and highlighting for jslib files, install the [jslib-for-unity](https://github.com/TheSleepyKoala/jslib-for-unity) package.
 
 ## Contributing
 
