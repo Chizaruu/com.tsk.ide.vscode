@@ -1026,12 +1026,21 @@ namespace VSCodeEditor
                 return;
             }
 
+            string dotnetArguments = GetDotnetArguments();
+
+            if (dotnetArguments == null)
+            {
+                Debug.Log(
+                    "Could not find a compatible dotnet arguments. Aborting Nuget Json generation."
+                );
+                return;
+            }
+
             using var process = new System.Diagnostics.Process();
             var processStartInfo = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = dotnetCommand,
-                Arguments = "-c \"dotnet build\"",
-                RedirectStandardOutput = true,
+                Arguments = dotnetArguments,
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
@@ -1049,6 +1058,19 @@ namespace VSCodeEditor
             return "/bin/bash";
 #elif UNITY_EDITOR_OSX
             return "/bin/zsh";
+#else
+            return null;
+#endif
+        }
+
+        string GetDotnetArguments()
+        {
+#if UNITY_EDITOR_WIN
+            return "build";
+#elif UNITY_EDITOR_LINUX || UNITY_EDITOR_OSX
+            return "-c \"dotnet build\"";
+#else
+            return null;
 #endif
         }
     }
