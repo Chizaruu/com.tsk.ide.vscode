@@ -1,5 +1,11 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.4.4] - 2023-08-02
+
+-   Remove TSKDoNotDelete Generation
+-   No longer can one's configuration be taken from them on import of this package.
+-   User must use `Preferences > External Tools > Generate config files for:` to generate their config files.
+
 ## [1.4.3] - 2023-07-29
 
 -   Fix possible deadlock caused by not reading stdout
