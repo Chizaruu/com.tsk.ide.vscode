@@ -575,11 +575,6 @@ namespace VSCodeEditor
             {
                 m_ProjectGeneration.Sync();
             }
-
-            if (!m_ConfigGeneration.TskFileExists())
-            {
-                m_ConfigGeneration.Sync(true);
-            }
         }
 
         public void SyncIfNeeded(

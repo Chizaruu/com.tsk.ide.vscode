@@ -22,8 +22,7 @@ namespace VSCodeEditor
         string EditorConfigSettings { get; set; }
         string ProjectDirectory { get; }
         IFlagHandler FlagHandler { get; }
-        bool TskFileExists();
-        void Sync(bool force = false);
+        void Sync();
     }
 
     public class ConfigGeneration : IConfigGenerator
@@ -86,7 +85,7 @@ namespace VSCodeEditor
     },
     ""omnisharp.useModernNet"": true,
     ""omnisharp.sdkIncludePrereleases"": false,
-    ""omnisharp.organizeImportsOnFormat"": true,
+    ""omnisharp.organizeImportsOnFormat"": true
 }";
 
         const string k_DefaultWorkspaceJson =
@@ -225,32 +224,17 @@ trim_trailing_whitespace = true
             m_FileIOProvider = new FileIOProvider();
         }
 
-        public bool TskFileExists()
+        public void Sync()
         {
-            var doNotDelete = Path.Combine(ProjectDirectory, "TSKDoNotDelete.txt");
-
-            if (m_FileIOProvider.Exists(doNotDelete))
-                return true;
-
-            m_FileIOProvider.WriteAllText(
-                doNotDelete,
-                "This file is used by the TSK VSCode Editor package. Deleting it will cause your configuration to be overwritten."
-            );
-
-            return false;
+            WriteVSCodeSettingsFiles();
+            WriteWorkspaceFile();
+            WriteOmniSharpConfigFile();
+            WriteEditorConfigFile();
         }
 
-        public void Sync(bool canForce = false)
+        void WriteVSCodeSettingsFiles()
         {
-            WriteVSCodeSettingsFiles(canForce);
-            WriteWorkspaceFile(canForce);
-            WriteOmniSharpConfigFile(canForce);
-            WriteEditorConfigFile(canForce);
-        }
-
-        void WriteVSCodeSettingsFiles(bool canForce = false)
-        {
-            if (m_FlagHandler.ConfigFlag.HasFlag(ConfigFlag.VSCode) || canForce)
+            if (m_FlagHandler.ConfigFlag.HasFlag(ConfigFlag.VSCode))
             {
                 var vsCodeDirectory = Path.Combine(ProjectDirectory, ".vscode");
 
@@ -263,9 +247,9 @@ trim_trailing_whitespace = true
             }
         }
 
-        void WriteWorkspaceFile(bool canForce = false)
+        void WriteWorkspaceFile()
         {
-            if (m_FlagHandler.ConfigFlag.HasFlag(ConfigFlag.Workspace) || canForce)
+            if (m_FlagHandler.ConfigFlag.HasFlag(ConfigFlag.Workspace))
             {
                 var workspaceFile = Path.Combine(
                     ProjectDirectory,
@@ -276,9 +260,9 @@ trim_trailing_whitespace = true
             }
         }
 
-        void WriteOmniSharpConfigFile(bool canForce = false)
+        void WriteOmniSharpConfigFile()
         {
-            if (m_FlagHandler.ConfigFlag.HasFlag(ConfigFlag.OmniSharp) || canForce)
+            if (m_FlagHandler.ConfigFlag.HasFlag(ConfigFlag.OmniSharp))
             {
                 var omniSharpConfig = Path.Combine(ProjectDirectory, "omnisharp.json");
 
@@ -286,9 +270,9 @@ trim_trailing_whitespace = true
             }
         }
 
-        void WriteEditorConfigFile(bool canForce = false)
+        void WriteEditorConfigFile()
         {
-            if (m_FlagHandler.ConfigFlag.HasFlag(ConfigFlag.EditorConfig) || canForce)
+            if (m_FlagHandler.ConfigFlag.HasFlag(ConfigFlag.EditorConfig))
             {
                 var editorConfig = Path.Combine(ProjectDirectory, ".editorconfig");
 
