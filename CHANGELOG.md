@@ -2,6 +2,7 @@
 
 ## [1.4.4] - 2023-08-02
 
+-   Fix the asmdef name to not conflict with the official package - Thanks @mifreundorfer
 -   Remove TSKDoNotDelete Generation
 -   No longer can one's configuration be taken from them on import of this package.
 -   User must use `Preferences > External Tools > Generate config files for:` to generate their config files.
