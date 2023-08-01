@@ -1,5 +1,5 @@
 {
-    "name": "Unity.VSCode.Editor",
+    "name": "com.tsk.vscode.Editor",
     "rootNamespace": "",
     "references": [],
     "includePlatforms": [
