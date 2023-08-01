@@ -510,7 +510,9 @@ namespace VSCodeEditor
 
             targetFrameWork.Value = GetTargetFrameworkVersion(netSettings);
 
-            AddCommonProperties(assembly, responseFilesData, project);
+            var otherArguments = GetOtherArgumentsFromResponseFilesData(responseFilesData);
+
+            AddCommonProperties(assembly, responseFilesData, project, otherArguments);
 
             // we have source files
             if (assembly.sourceFiles.Length != 0)
@@ -593,6 +595,19 @@ namespace VSCodeEditor
                 }
 
                 project.Add(assemblyRefItemGroup);
+            }
+
+            {
+                var analyzersRefItemGroup = new XElement("ItemGroup");
+
+                var analyzers = RetrieveRoslynAnalyzers(assembly, otherArguments);
+                foreach (var item in analyzers)
+                {
+                    analyzersRefItemGroup.Add(new XElement("Analyzer",
+                        new XAttribute("Include", item)));
+                }
+
+                project.Add(analyzersRefItemGroup);
             }
 
             if (
@@ -749,11 +764,10 @@ namespace VSCodeEditor
         private void AddCommonProperties(
             Assembly assembly,
             List<ResponseFileData> responseFilesData,
-            XElement builder
+            XElement builder,
+            ILookup<string, string> otherArguments
         )
         {
-            var otherArguments = GetOtherArgumentsFromResponseFilesData(responseFilesData);
-
             // Language version
             var langVersion = GenerateLangVersion(otherArguments["langversion"], assembly);
 
@@ -853,6 +867,16 @@ namespace VSCodeEditor
                 .Where(a => !string.IsNullOrEmpty(a))
                 .Distinct()
                 .Select(x => MakeAbsolutePath(x).NormalizePath())
+                .ToArray();
+        }
+
+        string[] RetrieveRoslynAnalyzers(Assembly assembly, ILookup<string, string> otherArguments)
+        {
+            return otherArguments["analyzer"].Concat(otherArguments["a"])
+                .SelectMany(x => x.Split(';'))
+                .Concat(assembly.compilerOptions.RoslynAnalyzerDllPaths)
+                .Select(MakeAbsolutePath)
+                .Distinct()
                 .ToArray();
         }
 
