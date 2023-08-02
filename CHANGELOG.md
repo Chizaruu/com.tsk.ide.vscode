@@ -1,5 +1,9 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.4.5] - 2023-08-02
+
+-   Added custom and unity builtin analyzers to csproj #69 - Thanks @mifreundorfer
+
 ## [1.4.4] - 2023-08-02
 
 -   Fix the asmdef name to not conflict with the official package - Thanks @mifreundorfer
