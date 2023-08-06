@@ -1,9 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
-using UnityEditor.Compilation;
-using UnityEditor.PackageManager;
 
 namespace VSCodeEditor
 {
@@ -20,8 +16,7 @@ namespace VSCodeEditor
         None = 0,
         VSCode = 1,
         Workspace = 2,
-        OmniSharp = 4,
-        EditorConfig = 8,
+        EditorConfig = 4,
     }
 
     [Flags]

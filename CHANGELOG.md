@@ -1,5 +1,11 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.4.7] - 2023-08-06
+
+-   Remove omnisharp config generation from package
+-   Clean up code and remove unused directives
+-   Update .gitignore to remove .omnisharp.json ignore
+
 ## [1.4.6] - 2023-08-06
 
 -   Added ignore IDE0051 to .editorconfig default configuration

@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using Unity.CodeEditor;
 using UnityEditor;
-using UnityEditor.PackageManager;
 using UnityEngine;
 
 namespace VSCodeEditor
@@ -23,12 +22,10 @@ namespace VSCodeEditor
         bool m_ShowProjectSection = true;
         bool m_ShowVSCodeSettingsSection = false;
         bool m_ShowWorkspaceSection = false;
-        bool m_ShowOmniSharpSection = false;
         bool m_ShowEditorConfigSection = false;
 
         Vector2 m_VSCodeScrollPosition;
         Vector2 m_WorkspaceScrollPosition;
-        Vector2 m_OmniSharpScrollPosition;
         Vector2 m_EditorConfigScrollPosition;
 
         readonly IDiscovery m_Discoverability;
@@ -111,52 +108,6 @@ namespace VSCodeEditor
             {
                 m_ShowProjectSection = value;
                 EditorPrefs.SetBool("vscode_showProjectSection", value);
-            }
-        }
-
-        bool ShowVSCodeSettingsSection
-        {
-            get =>
-                m_ShowVSCodeSettingsSection
-                || EditorPrefs.GetBool("vscode_showVSCodeSettingsSection", false);
-            set
-            {
-                m_ShowVSCodeSettingsSection = value;
-                EditorPrefs.SetBool("vscode_showVSCodeSettingsSection", value);
-            }
-        }
-
-        bool ShowWorkspaceSection
-        {
-            get =>
-                m_ShowWorkspaceSection || EditorPrefs.GetBool("vscode_showWorkspaceSection", false);
-            set
-            {
-                m_ShowWorkspaceSection = value;
-                EditorPrefs.SetBool("vscode_showWorkspaceSection", value);
-            }
-        }
-
-        bool ShowOmniSharpSection
-        {
-            get =>
-                m_ShowOmniSharpSection || EditorPrefs.GetBool("vscode_showOmniSharpSection", false);
-            set
-            {
-                m_ShowOmniSharpSection = value;
-                EditorPrefs.SetBool("vscode_showOmniSharpSection", value);
-            }
-        }
-
-        bool ShowEditorConfigSection
-        {
-            get =>
-                m_ShowEditorConfigSection
-                || EditorPrefs.GetBool("vscode_showEditorConfigSection", false);
-            set
-            {
-                m_ShowEditorConfigSection = value;
-                EditorPrefs.SetBool("vscode_showEditorConfigSection", value);
             }
         }
 
@@ -338,22 +289,6 @@ namespace VSCodeEditor
                     );
 
                 FlagButton(
-                    ConfigFlag.OmniSharp,
-                    "OmniSharp",
-                    "",
-                    (handler, flag) => handler.ConfigFlag.HasFlag(flag),
-                    (handler, flag) => handler.ToggleConfig(flag)
-                );
-
-                if (m_ConfigGeneration.FlagHandler.ConfigFlag.HasFlag(ConfigFlag.OmniSharp))
-                    RenderSettingsSection(
-                        ref m_ShowOmniSharpSection,
-                        m_ConfigGeneration.OmniSharpSettings,
-                        "OmniSharp",
-                        ref m_OmniSharpScrollPosition
-                    );
-
-                FlagButton(
                     ConfigFlag.EditorConfig,
                     "EditorConfig",
                     "",
@@ -407,9 +342,6 @@ namespace VSCodeEditor
                             break;
                         case "Workspace":
                             m_ConfigGeneration.WorkspaceSettings = settings;
-                            break;
-                        case "OmniSharp":
-                            m_ConfigGeneration.OmniSharpSettings = settings;
                             break;
                         case "editorconfig":
                             m_ConfigGeneration.EditorConfigSettings = settings;
@@ -555,9 +487,6 @@ namespace VSCodeEditor
                         break;
                     case "Reset Workspace settings":
                         m_ConfigGeneration.WorkspaceSettings = "";
-                        break;
-                    case "Reset OmniSharp settings":
-                        m_ConfigGeneration.OmniSharpSettings = "";
                         break;
                     case "Reset editorconfig settings":
                         m_ConfigGeneration.EditorConfigSettings = "";

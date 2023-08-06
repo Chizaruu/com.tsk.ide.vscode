@@ -1,16 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Security;
-using System.Security.Cryptography;
-using System.Text;
-using System.Xml.Linq;
 using UnityEditor;
-using UnityEditor.Compilation;
-using UnityEngine;
-using UnityEngine.Profiling;
-using SR = System.Reflection;
 
 namespace VSCodeEditor
 {
@@ -18,7 +7,6 @@ namespace VSCodeEditor
     {
         string VSCodeSettings { get; set; }
         string WorkspaceSettings { get; set; }
-        string OmniSharpSettings { get; set; }
         string EditorConfigSettings { get; set; }
         string ProjectDirectory { get; }
         IFlagHandler FlagHandler { get; }
@@ -82,10 +70,7 @@ namespace VSCodeEditor
         ""ProjectSettings/"":true,
         ""temp/"":true,
         ""Temp/"":true
-    },
-    ""omnisharp.useModernNet"": true,
-    ""omnisharp.sdkIncludePrereleases"": false,
-    ""omnisharp.organizeImportsOnFormat"": true
+    }
 }";
 
         const string k_DefaultWorkspaceJson =
@@ -96,24 +81,6 @@ namespace VSCodeEditor
 			""path"": "".""
 		}
 	]
-}";
-
-        const string k_DefaultOmniSharpJson =
-            /*lang=json,strict*/
-            @"{
-    ""RoslynExtensionsOptions"": {
-        ""EnableAnalyzersSupport"": true,
-        ""AnalyzeOpenDocumentsOnly"": true,
-        ""DocumentAnalysisTimeoutMs"": 600000
-    },
-    ""FormattingOptions"": {
-        ""enableEditorConfigSupport"": true
-    },
-    ""RenameOptions"": {
-        ""RenameInComments"": true,
-        ""RenameOverloads"": true,
-        ""RenameInStrings"": true
-    }
 }";
 
         const string k_DefaultEditorConfig =
@@ -139,7 +106,6 @@ dotnet_diagnostic.IDE0051.severity = none
 
         string m_VSCodeSettings;
         string m_WorkspaceSettings;
-        string m_OmniSharpSettings;
         string m_EditorConfigSettings;
 
         public string VSCodeSettings
@@ -173,23 +139,6 @@ dotnet_diagnostic.IDE0051.severity = none
 
                 m_WorkspaceSettings = value;
                 EditorPrefs.SetString("vscode_workspaceSettings", value);
-            }
-        }
-
-        public string OmniSharpSettings
-        {
-            get =>
-                m_OmniSharpSettings ??= EditorPrefs.GetString(
-                    "vscode_omnisharpSettings",
-                    k_DefaultOmniSharpJson
-                );
-            set
-            {
-                if (value == "")
-                    value = k_DefaultOmniSharpJson;
-
-                m_OmniSharpSettings = value;
-                EditorPrefs.SetString("vscode_omnisharpSettings", value);
             }
         }
 
@@ -232,7 +181,6 @@ dotnet_diagnostic.IDE0051.severity = none
         {
             WriteVSCodeSettingsFiles();
             WriteWorkspaceFile();
-            WriteOmniSharpConfigFile();
             WriteEditorConfigFile();
         }
 
@@ -261,16 +209,6 @@ dotnet_diagnostic.IDE0051.severity = none
                 );
 
                 m_FileIOProvider.WriteAllText(workspaceFile, WorkspaceSettings);
-            }
-        }
-
-        void WriteOmniSharpConfigFile()
-        {
-            if (m_FlagHandler.ConfigFlag.HasFlag(ConfigFlag.OmniSharp))
-            {
-                var omniSharpConfig = Path.Combine(ProjectDirectory, "omnisharp.json");
-
-                m_FileIOProvider.WriteAllText(omniSharpConfig, OmniSharpSettings);
             }
         }
 
