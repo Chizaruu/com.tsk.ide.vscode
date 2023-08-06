@@ -1,5 +1,9 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.4.6] - 2023-08-06
+
+-   Added ignore IDE0051 to .editorconfig default configuration
+
 ## [1.4.5] - 2023-08-02
 
 -   Added custom and unity builtin analyzers to csproj #69 - Thanks @mifreundorfer
