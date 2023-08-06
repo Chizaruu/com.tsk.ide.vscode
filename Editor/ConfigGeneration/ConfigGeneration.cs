@@ -127,6 +127,10 @@ root = true
 indent_style = space
 indent_size = 4
 trim_trailing_whitespace = true
+
+#Ignore IDE0051: Remove unused private members
+[*.cs]
+dotnet_diagnostic.IDE0051.severity = none
 ";
 
         public string ProjectDirectory { get; }
