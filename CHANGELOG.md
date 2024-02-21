@@ -1,5 +1,9 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.4.8] - 2024-02-22
+
+-   Added Launch.json section to Externals Tools
+
 ## [1.4.7] - 2023-08-06
 
 -   Remove omnisharp config generation from package
