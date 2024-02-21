@@ -17,6 +17,7 @@ namespace VSCodeEditor
         VSCode = 1,
         Workspace = 2,
         EditorConfig = 4,
+        LaunchConfig = 8,
     }
 
     [Flags]

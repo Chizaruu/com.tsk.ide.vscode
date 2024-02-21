@@ -23,10 +23,12 @@ namespace VSCodeEditor
         bool m_ShowVSCodeSettingsSection = false;
         bool m_ShowWorkspaceSection = false;
         bool m_ShowEditorConfigSection = false;
+        bool m_ShowLaunchConfigSection = false;
 
         Vector2 m_VSCodeScrollPosition;
         Vector2 m_WorkspaceScrollPosition;
         Vector2 m_EditorConfigScrollPosition;
+        Vector2 m_LaunchConfigScrollPosition;
 
         readonly IDiscovery m_Discoverability;
         readonly IGenerator m_ProjectGeneration;
@@ -111,6 +113,18 @@ namespace VSCodeEditor
             }
         }
 
+        bool ShowLaunchConfigSection
+        {
+            get =>
+                m_ShowLaunchConfigSection
+                || EditorPrefs.GetBool("vscode_showLaunchConfigSection", false);
+            set
+            {
+                m_ShowLaunchConfigSection = value;
+                EditorPrefs.SetBool("vscode_showLaunchConfigSection", value);
+            }
+        }
+
         static string[] DefaultExtensions
         {
             get
@@ -188,6 +202,7 @@ namespace VSCodeEditor
             RenderExtensionsSection();
             RenderConfigSection();
             RenderProjectSection();
+
         }
 
         void RenderEditorSection()
@@ -290,7 +305,7 @@ namespace VSCodeEditor
 
                 FlagButton(
                     ConfigFlag.EditorConfig,
-                    "EditorConfig",
+                    "Editor Config",
                     "",
                     (handler, flag) => handler.ConfigFlag.HasFlag(flag),
                     (handler, flag) => handler.ToggleConfig(flag)
@@ -302,6 +317,22 @@ namespace VSCodeEditor
                         m_ConfigGeneration.EditorConfigSettings,
                         "editorconfig",
                         ref m_EditorConfigScrollPosition
+                    );
+
+                FlagButton(
+                    ConfigFlag.LaunchConfig,
+                    "Launch Config",
+                    "",
+                    (handler, flag) => handler.ConfigFlag.HasFlag(flag),
+                    (handler, flag) => handler.ToggleConfig(flag)
+                );
+
+                if (m_ConfigGeneration.FlagHandler.ConfigFlag.HasFlag(ConfigFlag.LaunchConfig))
+                    RenderSettingsSection(
+                        ref m_ShowLaunchConfigSection,
+                        m_ConfigGeneration.LaunchConfigSettings,
+                        "Launch",
+                        ref m_LaunchConfigScrollPosition
                     );
 
                 RegenerateButton("Regenerate", "Regenerate config files");
@@ -345,6 +376,9 @@ namespace VSCodeEditor
                             break;
                         case "editorconfig":
                             m_ConfigGeneration.EditorConfigSettings = settings;
+                            break;
+                        case "Launch":
+                            m_ConfigGeneration.LaunchConfigSettings = settings;
                             break;
                     }
                 }
@@ -490,6 +524,9 @@ namespace VSCodeEditor
                         break;
                     case "Reset editorconfig settings":
                         m_ConfigGeneration.EditorConfigSettings = "";
+                        break;
+                    case "Reset Launch settings":
+                        m_ConfigGeneration.LaunchConfigSettings = "";
                         break;
                     default:
                         UnityEngine.Debug.LogError("Unknown button pressed");

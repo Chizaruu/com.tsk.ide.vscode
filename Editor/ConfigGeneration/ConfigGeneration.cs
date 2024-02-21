@@ -8,6 +8,7 @@ namespace VSCodeEditor
         string VSCodeSettings { get; set; }
         string WorkspaceSettings { get; set; }
         string EditorConfigSettings { get; set; }
+        string LaunchConfigSettings { get; set; }
         string ProjectDirectory { get; }
         IFlagHandler FlagHandler { get; }
         void Sync();
@@ -100,6 +101,16 @@ trim_trailing_whitespace = true
 dotnet_diagnostic.IDE0051.severity = none
 ";
 
+        const string k_DefaultLaunchConfig = @"{
+    ""version"": ""0.2.0"",
+    ""configurations"": [
+        {
+            ""name"": ""Attach to Unity"",
+            ""type"": ""vstuc"",
+            ""request"": ""attach""
+        }
+     ]
+}";
         public string ProjectDirectory { get; }
         readonly string m_ProjectName;
         IFlagHandler IConfigGenerator.FlagHandler => m_FlagHandler;
@@ -107,6 +118,7 @@ dotnet_diagnostic.IDE0051.severity = none
         string m_VSCodeSettings;
         string m_WorkspaceSettings;
         string m_EditorConfigSettings;
+        string m_LaunchConfigSettings;
 
         public string VSCodeSettings
         {
@@ -159,6 +171,23 @@ dotnet_diagnostic.IDE0051.severity = none
             }
         }
 
+        public string LaunchConfigSettings
+        {
+            get =>
+                m_LaunchConfigSettings ??= EditorPrefs.GetString(
+                    "vscode_launchConfigSettings",
+                    k_DefaultLaunchConfig
+                );
+            set
+            {
+                if (value == "")
+                    value = k_DefaultLaunchConfig;
+
+                m_LaunchConfigSettings = value;
+                EditorPrefs.SetString("vscode_launchConfigSettings", value);
+            }
+        }
+
         readonly IFlagHandler m_FlagHandler;
         readonly IFileIO m_FileIOProvider;
 
@@ -182,6 +211,7 @@ dotnet_diagnostic.IDE0051.severity = none
             WriteVSCodeSettingsFiles();
             WriteWorkspaceFile();
             WriteEditorConfigFile();
+            WriteLaunchConfigFile();
         }
 
         void WriteVSCodeSettingsFiles()
@@ -219,6 +249,21 @@ dotnet_diagnostic.IDE0051.severity = none
                 var editorConfig = Path.Combine(ProjectDirectory, ".editorconfig");
 
                 m_FileIOProvider.WriteAllText(editorConfig, EditorConfigSettings);
+            }
+        }
+
+        void WriteLaunchConfigFile()
+        {
+            if (m_FlagHandler.ConfigFlag.HasFlag(ConfigFlag.LaunchConfig))
+            {
+                var vsCodeDirectory = Path.Combine(ProjectDirectory, ".vscode");
+
+                if (!m_FileIOProvider.Exists(vsCodeDirectory))
+                    m_FileIOProvider.CreateDirectory(vsCodeDirectory);
+
+                var launchConfigJson = Path.Combine(vsCodeDirectory, "launch.json");
+
+                m_FileIOProvider.WriteAllText(launchConfigJson, LaunchConfigSettings);
             }
         }
     }
