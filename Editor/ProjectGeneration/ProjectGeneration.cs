@@ -42,16 +42,16 @@ namespace VSCodeEditor
         static readonly Dictionary<string, ScriptingLanguage> k_BuiltinSupportedExtensions =
             new()
             {
-                { "cs", ScriptingLanguage.CSharp },
-                { "uxml", ScriptingLanguage.None },
-                { "uss", ScriptingLanguage.None },
-                { "shader", ScriptingLanguage.None },
-                { "compute", ScriptingLanguage.None },
                 { "cginc", ScriptingLanguage.None },
-                { "hlsl", ScriptingLanguage.None },
+                { "compute", ScriptingLanguage.None },
+                { "cs", ScriptingLanguage.CSharp },
                 { "glslinc", ScriptingLanguage.None },
+                { "hlsl", ScriptingLanguage.None },
+                { "raytrace", ScriptingLanguage.None },
+                { "shader", ScriptingLanguage.None },
                 { "template", ScriptingLanguage.None },
-                { "raytrace", ScriptingLanguage.None }
+                { "uss", ScriptingLanguage.None },
+                { "uxml", ScriptingLanguage.None }
             };
 
         readonly string m_SolutionProjectEntryTemplate = string.Join(
@@ -92,7 +92,8 @@ namespace VSCodeEditor
                 new AssemblyNameProvider(),
                 new FileIOProvider(),
                 new GUIDProvider()
-            ) { }
+            )
+        { }
 
         public ProjectGeneration(
             string tempDirectory,

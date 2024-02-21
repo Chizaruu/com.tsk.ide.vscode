@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 using Unity.CodeEditor;
 using UnityEditor;
 using UnityEngine;
@@ -24,6 +25,9 @@ namespace VSCodeEditor
         bool m_ShowWorkspaceSection = false;
         bool m_ShowEditorConfigSection = false;
         bool m_ShowLaunchConfigSection = false;
+        bool m_ShowBuiltInExtensions = true;
+        bool m_ShowUnityUserExtensions = true;
+        bool m_ShowTSKCustomExtensions = true;
 
         Vector2 m_VSCodeScrollPosition;
         Vector2 m_WorkspaceScrollPosition;
@@ -71,6 +75,14 @@ namespace VSCodeEditor
             }
         }
 
+        static string[] UserAddedExtensions
+        {
+            get => EditorPrefs.GetString("vscode_userAddedExtensions", "").Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+            set => EditorPrefs.SetString("vscode_userAddedExtensions", string.Join(";", value));
+        }
+
+        #region EditorPrefs Bool Sections
+
         bool ShowEditorSection
         {
             get => m_ShowEditorSection || EditorPrefs.GetBool("vscode_showEditorSection", false);
@@ -113,96 +125,102 @@ namespace VSCodeEditor
             }
         }
 
-        bool ShowLaunchConfigSection
+        bool ShowBuiltInExtensions
         {
             get =>
-                m_ShowLaunchConfigSection
-                || EditorPrefs.GetBool("vscode_showLaunchConfigSection", false);
+                m_ShowBuiltInExtensions
+                || EditorPrefs.GetBool("vscode_showBuiltInExtensions", false);
             set
             {
-                m_ShowLaunchConfigSection = value;
-                EditorPrefs.SetBool("vscode_showLaunchConfigSection", value);
+                m_ShowBuiltInExtensions = value;
+                EditorPrefs.SetBool("vscode_showBuiltInExtensions", value);
             }
         }
 
-        static string[] DefaultExtensions
+        bool ShowUnityUserExtensions
         {
-            get
+            get =>
+                m_ShowUnityUserExtensions
+                || EditorPrefs.GetBool("vscode_showUnityUserExtensions", false);
+            set
             {
-                var customExtensions = new[] { "json", "asmdef", "log", "jslib" };
-                return EditorSettings.projectGenerationBuiltinExtensions
-                    .Concat(EditorSettings.projectGenerationUserExtensions)
-                    .Concat(customExtensions)
-                    .Distinct()
-                    .ToArray();
+                m_ShowUnityUserExtensions = value;
+                EditorPrefs.SetBool("vscode_showUnityUserExtensions", value);
             }
         }
 
-        static string[] HandledExtensions
+        bool ShowTSKCustomExtensions
         {
-            get
+            get =>
+                m_ShowTSKCustomExtensions
+                || EditorPrefs.GetBool("vscode_showTSKCustomExtensions", false);
+            set
             {
-                return HandledExtensionsString
-                    .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(s => s.TrimStart('.', '*'))
-                    .ToArray();
+                m_ShowTSKCustomExtensions = value;
+                EditorPrefs.SetBool("vscode_showTSKCustomExtensions", value);
             }
         }
 
-        static string HandledExtensionsString
+        bool ShowUserCustomExtensions
         {
-            get => EditorPrefs.GetString(vscode_extension, string.Join(";", DefaultExtensions));
-            set => EditorPrefs.SetString(vscode_extension, value);
+            get =>
+                EditorPrefs.GetBool("vscode_showUserCustomExtensions", false);
+            set
+            {
+                EditorPrefs.SetBool("vscode_showUserCustomExtensions", value);
+            }
         }
 
-        public bool TryGetInstallationForPath(
-            string editorPath,
-            out CodeEditor.Installation installation
-        )
+        #endregion
+
+        #region Extensions Section
+
+        static readonly string[] customExtensions = { "jslib", "json", "log" };
+        private static string[] cachedDefaultExtensions;
+        private static HashSet<string> cachedHandledExtensions;
+
+        public static string[] DefaultExtensions => cachedDefaultExtensions ??= GetDefaultExtensions();
+
+        private static string[] GetDefaultExtensions() =>
+            EditorSettings.projectGenerationBuiltinExtensions
+                .Concat(EditorSettings.projectGenerationUserExtensions)
+                .Concat(customExtensions)
+                .Concat(UserAddedExtensions)
+                .Distinct()
+                .ToArray();
+
+        private static HashSet<string> HandledExtensions => cachedHandledExtensions
+            ??= new(DefaultExtensions.Select(ext => ext.TrimStart('.', '*')));
+
+        private static bool SupportsExtension(string path)
         {
-            var lowerCasePath = editorPath.ToLower();
-            var filename = Path.GetFileName(lowerCasePath).Replace(" ", "");
-            var installations = Installations;
-            if (!k_SupportedFileNames.Contains(filename))
-            {
-                installation = default;
-                return false;
-            }
-
-            if (!installations.Any())
-            {
-                installation = new CodeEditor.Installation
-                {
-                    Name = "Visual Studio Code",
-                    Path = editorPath
-                };
-            }
-            else
-            {
-                try
-                {
-                    installation = installations.First(inst => inst.Path == editorPath);
-                }
-                catch (InvalidOperationException)
-                {
-                    installation = new CodeEditor.Installation
-                    {
-                        Name = "Visual Studio Code",
-                        Path = editorPath
-                    };
-                }
-            }
-
-            return true;
+            var extension = Path.GetExtension(path)?.TrimStart('.');
+            return extension != null && HandledExtensions.Contains(extension);
         }
 
+        private string extensionToAdd;
+
+        private void AddUserExtension()
+        {
+            extensionToAdd = extensionToAdd.TrimStart('.');
+
+            var currentExtensions = UserAddedExtensions.ToList();
+            if (!currentExtensions.Contains(extensionToAdd))
+            {
+                currentExtensions.Add(extensionToAdd);
+                UserAddedExtensions = currentExtensions.ToArray();
+            }
+        }
+
+        #endregion
+
+        #region UI
         public void OnGUI()
         {
             RenderEditorSection();
             RenderExtensionsSection();
             RenderConfigSection();
             RenderProjectSection();
-
         }
 
         void RenderEditorSection()
@@ -250,11 +268,86 @@ namespace VSCodeEditor
             if (ShowExtensionsSection)
             {
                 EditorGUI.indentLevel++;
-                HandledExtensionsString = EditorGUILayout.TextField(
-                    new GUIContent("Extensions handled: "),
-                    HandledExtensionsString
-                );
-                RegenerateButton("Reset to default", "Regenerate default extensions");
+
+                // Built-in Extensions Foldout
+                ShowBuiltInExtensions = EditorGUILayout.Foldout(ShowBuiltInExtensions, "Built-in Extensions", true);
+                if (ShowBuiltInExtensions)
+                {
+                    EditorGUI.BeginDisabledGroup(true);
+                    foreach (var ext in EditorSettings.projectGenerationBuiltinExtensions)
+                    {
+                        EditorGUILayout.TextField(ext);
+                    }
+                    EditorGUI.EndDisabledGroup();
+                }
+
+                // Unity User Extensions Foldout
+                ShowUnityUserExtensions = EditorGUILayout.Foldout(ShowUnityUserExtensions, "Unity User Extensions", true);
+                if (ShowUnityUserExtensions)
+                {
+                    EditorGUI.BeginDisabledGroup(true);
+                    foreach (var ext in EditorSettings.projectGenerationUserExtensions)
+                    {
+                        EditorGUILayout.TextField(ext);
+                    }
+                    EditorGUI.EndDisabledGroup();
+                }
+
+                // TSK Custom Extensions Foldout
+                ShowTSKCustomExtensions = EditorGUILayout.Foldout(ShowTSKCustomExtensions, "TSK Custom Extensions", true);
+                if (ShowTSKCustomExtensions)
+                {
+                    EditorGUI.BeginDisabledGroup(true);
+                    foreach (var ext in customExtensions)
+                    {
+                        EditorGUILayout.TextField(ext);
+                    }
+                    EditorGUI.EndDisabledGroup();
+                }
+
+                // Custom User Extensions Foldout
+                ShowUserCustomExtensions = EditorGUILayout.Foldout(ShowUserCustomExtensions, "Custom User Extensions", true);
+                if (ShowUserCustomExtensions)
+                {
+                    var userExtensions = UserAddedExtensions.ToList();
+                    for (int i = userExtensions.Count - 1; i >= 0; i--)
+                    {
+                        EditorGUILayout.BeginHorizontal();
+                        EditorGUI.BeginDisabledGroup(true);
+                        //Make read-only text field
+                        EditorGUILayout.TextField(userExtensions[i]);
+                        EditorGUI.EndDisabledGroup();
+
+                        if (GUILayout.Button("Delete", GUILayout.Width(60)))
+                        {
+                            userExtensions.RemoveAt(i);
+                            UserAddedExtensions = userExtensions.ToArray();
+                        }
+                        EditorGUILayout.EndHorizontal();
+                    }
+
+                    EditorGUILayout.Space();
+                    // Add Custom User Extensions
+                    EditorGUILayout.LabelField("Add Custom User Extension:", EditorStyles.boldLabel);
+
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUI.BeginChangeCheck();
+                    var newExtension = EditorGUILayout.TextArea("");
+
+                    if (EditorGUI.EndChangeCheck() && !string.IsNullOrWhiteSpace(newExtension))
+                    {
+                        extensionToAdd = newExtension;
+                    }
+
+                    if (GUILayout.Button("Add", GUILayout.Width(60)))
+                    {
+                        AddUserExtension();
+                    }
+
+                    EditorGUILayout.EndHorizontal();
+                }
+                EditorGUILayout.Space();
+
                 EditorGUI.indentLevel--;
             }
         }
@@ -507,9 +600,6 @@ namespace VSCodeEditor
                             EditorArguments = ExternalEditorDefaultArgument;
                         }
                         break;
-                    case "Regenerate default extensions":
-                        HandledExtensionsString = string.Join(";", DefaultExtensions);
-                        break;
                     case "Regenerate config files":
                         m_ConfigGeneration.Sync();
                         break;
@@ -534,6 +624,10 @@ namespace VSCodeEditor
                 }
             }
         }
+
+        #endregion
+
+        #region ProjectSync
 
         public void CreateIfDoesntExist()
         {
@@ -567,6 +661,51 @@ namespace VSCodeEditor
             )?.ResetPackageInfoCache();
             AssetDatabase.Refresh();
             m_ProjectGeneration.Sync();
+        }
+
+        #endregion
+
+        #region InstallationManagement
+
+        public bool TryGetInstallationForPath(
+                    string editorPath,
+                    out CodeEditor.Installation installation
+                )
+        {
+            var lowerCasePath = editorPath.ToLower();
+            var filename = Path.GetFileName(lowerCasePath).Replace(" ", "");
+            var installations = Installations;
+            if (!k_SupportedFileNames.Contains(filename))
+            {
+                installation = default;
+                return false;
+            }
+
+            if (!installations.Any())
+            {
+                installation = new CodeEditor.Installation
+                {
+                    Name = "Visual Studio Code",
+                    Path = editorPath
+                };
+            }
+            else
+            {
+                try
+                {
+                    installation = installations.First(inst => inst.Path == editorPath);
+                }
+                catch (InvalidOperationException)
+                {
+                    installation = new CodeEditor.Installation
+                    {
+                        Name = "Visual Studio Code",
+                        Path = editorPath
+                    };
+                }
+            }
+
+            return true;
         }
 
         public bool OpenProject(string path, int line, int column)
@@ -648,15 +787,9 @@ namespace VSCodeEditor
             return true;
         }
 
-        static bool SupportsExtension(string path)
-        {
-            var extension = Path.GetExtension(path);
-            if (string.IsNullOrEmpty(extension))
-                return false;
-            return HandledExtensions.Contains(extension.TrimStart('.'));
-        }
-
         public CodeEditor.Installation[] Installations => m_Discoverability.PathCallback();
+
+        #endregion
 
         public VSCodeScriptEditor(
             IDiscovery discovery,
@@ -678,6 +811,7 @@ namespace VSCodeEditor
                 new ProjectGeneration(projectDirectory),
                 new ConfigGeneration(projectDirectory)
             );
+
             CodeEditor.Register(editor);
 
             if (IsVSCodeInstallation(CodeEditor.CurrentEditorInstallation))
