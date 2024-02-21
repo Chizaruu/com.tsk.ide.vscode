@@ -1,5 +1,12 @@
 # Code Editor Package for Visual Studio Code
 
+## [1.5.0] - 2024-02-22
+
+-   Fixed DefaultExtensions not updating correctly
+-   Added regions for peace of mind
+-   Added Extension Test File (KoalaExtension.koala)
+-   Better UI/UX for the user
+
 ## [1.4.8] - 2024-02-22
 
 -   Added Launch.json section to Externals Tools
